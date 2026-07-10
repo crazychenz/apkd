@@ -19,7 +19,7 @@ def main():
     apkd_subparsers = apkd_parser.add_subparsers(dest="category", required=True)
 
     # --- apkd apk
-    apkd_apk_parser = subparsers.add_parser("apk", help="Static APK analysis")
+    apkd_apk_parser = apkd_subparsers.add_parser("apk", help="Static APK analysis")
     apkd_apk_subparsers = apkd_apk_parser.add_subparsers(dest="apk_command", required=True)
 
     # --- apkd apk ls
@@ -35,7 +35,7 @@ def main():
 
     # --- apkd apk patch
     apkd_apk_patch_parser = apkd_apk_subparsers.add_parser("patch")
-    apkd_apk_patch_subparsers = apkd_apk_parser.add_subparsers(dest="apk_patch_command", required=True)
+    apkd_apk_patch_subparsers = apkd_apk_patch_parser.add_subparsers(dest="apk_patch_command", required=True)
 
     # --- apkd apk patch debug
     apkd_apk_patch_debug_parser = apkd_apk_patch_subparsers.add_parser("debug")
@@ -61,28 +61,28 @@ def main():
     apkd_apk_debugify_parser.set_defaults(func=apkd_apk_debugify_func)
 
     # --- apkd emu
-    apkd_emu_parser = subparsers.add_parser("emu", help="Android emulator management")
+    apkd_emu_parser = apkd_subparsers.add_parser("emu", help="Android emulator management")
     apkd_emu_subparsers = apkd_emu_parser.add_subparsers(dest="emu_command", required=True)
 
     # --- apkd emu get
-    apkd_emu_get_parser = apkd_emu_parser.add_parser("get")
+    apkd_emu_get_parser = apkd_emu_subparsers.add_parser("get")
     apkd_emu_get_parser.add_argument("spec")
     apkd_emu_get_parser.set_defaults(func=apkd_emu_get_func)
 
     # --- apkd emu create
-    apkd_emu_create_parser = apkd_emu_parser.add_parser("create")
+    apkd_emu_create_parser = apkd_emu_subparsers.add_parser("create")
     apkd_emu_create_parser.set_defaults(func=apkd_emu_create_func)
 
     # --- apkd emu start
-    apkd_emu_start_parser = apkd_emu_parser.add_parser("start")
+    apkd_emu_start_parser = apkd_emu_subparsers.add_parser("start")
     apkd_emu_start_parser.set_defaults(func=apkd_emu_start_func)
 
     # --- apkd emu stop
-    apkd_emu_stop_parser = apkd_emu_parser.add_parser("stop")
+    apkd_emu_stop_parser = apkd_emu_subparsers.add_parser("stop")
     apkd_emu_stop_parser.set_defaults(func=apkd_emu_stop_func)
 
     # --- apkd runtime
-    apkd_runtime_parser = subparsers.add_parser("runtime", help="Android runtime management")
+    apkd_runtime_parser = apkd_subparsers.add_parser("runtime", help="Android runtime management")
     apkd_runtime_subparsers = apkd_runtime_parser.add_subparsers(dest="runtime_command", required=True)
 
     # --- apkd runtime deploy
@@ -110,8 +110,8 @@ def main():
     apkd_runtime_easy_debug_parser.add_argument("application")
     apkd_runtime_easy_debug_parser.set_defaults(func=apkd_runtime_easy_debug_func)
 
-    argcomplete.autocomplete(parser)
-    args = parser.parse_args()
+    argcomplete.autocomplete(apkd_parser)
+    args = apkd_parser.parse_args()
     args.func(args)
 
 
