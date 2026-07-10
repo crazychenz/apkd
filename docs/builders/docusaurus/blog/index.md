@@ -1,0 +1,2 @@
+# No blog here
+{/* truncate */}

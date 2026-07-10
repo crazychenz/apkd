@@ -1,0 +1,223 @@
+// template/manual.typst
+// Custom Pandoc template for the `typst` writer.
+// This is a *Pandoc* template (note the $variable$ placeholders) that Pandoc
+// expands into a real Typst source file before handing it to `typst compile`.
+//
+// Usage:
+//   pandoc ... -t typst --template=template/manual.typst -o out.typ
+
+#let conf(
+  title: none,
+  subtitle: none,
+  authors: none,
+  date: none,
+  abstract: none,
+  toc-depth: 3,
+  cols: 1,
+  margin: (x: 1.1in, top: 1.2in, bottom: 1.2in),
+  paper: "us-letter",
+  lang: "en",
+  region: "US",
+  font: ("Noto Sans", "Noto Color Emoji"),
+  fontsize: 11pt,
+  sectionnumbering: "1.1",
+  doc,
+) = {
+  set document(title: if title != none { title } else { "" })
+  set page(
+    paper: paper,
+    margin: margin,
+    numbering: "1",
+    header: context {
+      if counter(page).get().first() > 1 [
+        #set text(size: 8pt, fill: gray.darken(20%))
+        #smallcaps(if title != none { title } else { "" })
+        #h(1fr)
+        #context {
+          let headings = query(selector(heading.where(level: 1)).before(here()))
+          if headings.len() > 0 [
+            #headings.last().body
+          ]
+        }
+      ]
+    },
+  )
+  set par(justify: true, leading: 0.65em)
+  set text(lang: lang, region: region, font: font, size: fontsize)
+  set heading(numbering: sectionnumbering)
+
+  // Slightly heavier rule under H1s so major sections read clearly even
+  // without relying on numbering alone.
+  //show heading.where(level: 1): it => {
+  //  // THIS BREAKS BUILD pagebreak(weak: true)
+  //  v(0.4em)
+  //  it
+  //  v(0.2em)
+  //  line(length: 100%, stroke: 1.2pt)
+  //  v(0.6em)
+  //}
+
+  // let min-runway-lines = 8
+  // show heading.where(level: 1): it => context {
+  //   let line-height = 1.3 * text.size
+  //   let m = page.margin
+  //   let bottom-margin = if type(m) == dictionary { m.bottom } else { m }
+  //   let remaining = (page.height - bottom-margin) - here().position().y
+  //   if remaining < min-runway-lines * line-height {
+  //     pagebreak(weak: true)
+  //   }
+  //   v(0.4em)
+  //   it
+  //   v(0.2em)
+  //   line(length: 100%, stroke: 1.2pt)
+  //   v(0.6em)
+  // }
+
+  show heading.where(level: 1): it => {
+    v(0.4em)
+    it
+    v(0.2em)
+    line(length: 100%, stroke: 1.2pt)
+    v(0.6em)
+  }
+
+  show raw.where(block: true): it => block(
+    clip: true,
+    width: 100%,
+    inset: (x: 0.8em, y: 0.6em),
+    radius: 3pt,
+    fill: luma(240),
+    stroke: 0.5pt + luma(180),
+    text(size: 0.85em, it),
+  )
+
+  show table: set align(left)
+  set image(width: 100%)
+
+
+  // -------- Title page --------
+  if title != none {
+    align(center + horizon)[
+      #block(inset: 2em)[
+        #text(weight: "bold", size: 2em)[#title]
+        #if subtitle != none [
+          #v(0.5em)
+          #text(size: 1.2em, fill: gray.darken(10%))[#subtitle]
+        ]
+      ]
+      #if authors != none {
+        let count = authors.len()
+        let ncols = calc.min(count, 3)
+        v(1.5em)
+        grid(
+          columns: (1fr,) * ncols,
+          row-gutter: 1.5em,
+          ..authors.map(author => align(center)[
+            #author.name \
+            #author.affiliation \
+            #author.email
+          ])
+        )
+      }
+      #if date != none {
+        v(1em)
+        date
+      }
+    ]
+    pagebreak()
+  }
+
+  if abstract != none {
+    block(inset: 2em)[
+      #text(weight: "semibold")[Abstract] #h(1em) #abstract
+    ]
+    pagebreak()
+  }
+
+  // -------- Table of contents --------
+  // `depth` caps how deep the TOC goes; headings tagged `.unlisted` (turned
+  // into `outlined: false` by filters/toc-control.lua) are skipped
+  // regardless of depth, so both knobs work together to keep the TOC clean.
+  outline(title: auto, depth: toc-depth, indent: auto)
+  pagebreak()
+
+  if cols == 1 {
+    doc
+  } else {
+    columns(cols, doc)
+  }
+}
+
+$if(template)$
+#import "$template$": conf
+$endif$
+
+#show: doc => conf(
+$if(title)$
+  title: [$title$],
+$endif$
+$if(subtitle)$
+  subtitle: [$subtitle$],
+$endif$
+$if(author)$
+  authors: (
+$for(author)$
+$if(author.name)$
+    ( name: [$author.name$],
+      affiliation: [$author.affiliation$],
+      email: [$author.email$] ),
+$else$
+    ( name: [$author$],
+      affiliation: [],
+      email: [] ),
+$endif$
+$endfor$
+  ),
+$endif$
+$if(date)$
+  date: [$date$],
+$endif$
+$if(lang)$
+  lang: "$lang$",
+$endif$
+$if(region)$
+  region: "$region$",
+$endif$
+$if(abstract)$
+  abstract: [$abstract$],
+$endif$
+$if(toc-depth)$
+  toc-depth: $toc-depth$,
+$endif$
+$if(margin)$
+  margin: ($for(margin/pairs)$$margin.key$: $margin.value$,$endfor$),
+$endif$
+$if(papersize)$
+  paper: "$papersize$",
+$endif$
+$if(mainfont)$
+  font: ("$mainfont$",),
+$endif$
+$if(fontsize)$
+  fontsize: $fontsize$,
+$endif$
+$if(section-numbering)$
+  sectionnumbering: "$section-numbering$",
+$endif$
+  cols: $if(columns)$$columns$$else$1$endif$,
+  doc,
+)
+
+$for(header-includes)$
+$header-includes$
+
+$endfor$
+$for(include-before)$
+$include-before$
+
+$endfor$
+$body$
+$for(include-after)$
+
+$include-after$
+$endfor$

@@ -1,0 +1,39 @@
+loaders:
+  - type: python
+    search_path:
+      - .
+      - packages/thirdparty_pparse/src
+    packages:
+      - thirdparty.pparse.lib
+
+processors:
+  - type: filter
+    documented_only: true
+    do_not_filter_modules: true
+    skip_empty_modules: false
+
+  - type: google
+
+  - type: crossref
+
+renderer:
+  type: mkdocs
+  output_directory: api-output
+  content_directory_name: api
+
+  markdown:
+    code_headers: false
+    descriptive_class_title: false
+    descriptive_module_title: false
+    add_module_prefix: false
+    add_method_class_prefix: true
+    insert_header_anchors: true
+
+  pages:
+    - title: Pparse Framework
+      children:
+        - title: Overview
+          name: parse
+          contents:
+            - thirdparty.pparse.lib.*
+

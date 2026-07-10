@@ -1,0 +1,71 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary-dark: #21af90;
+  --ifm-color-primary-darker: #1fa588;
+  --ifm-color-primary-darkest: #1a8870;
+  --ifm-color-primary-light: #29d5b0;
+  --ifm-color-primary-lighter: #32d8b4;
+  --ifm-color-primary-lightest: #4fddbf;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+:target {
+  scroll-margin-top: 80px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #aab7b8;
+  width: 100%;
+  margin: 0.75rem 0;
+}
+
+.member-rule {
+  border: none;
+  border-top: 1px solid #aab7b8;
+  width: 100%;
+  margin: 0.75rem 0;
+}
+
+.h1-style { font-family: sans-serif; font-size: 2em; font-weight: bold; color: #1a5276; margin: 1.5rem 0 0.4rem; }
+.h2-style { font-family: sans-serif; font-size: 1.15em; font-weight: bold; color: #5d6d7e; text-transform: uppercase; margin: 1.2rem 0 0.3rem; }
+.h3-style { font-family: sans-serif; font-size: 1.25em; font-weight: bold; color: #1a5276; margin: 1rem 0 0.3rem; }
+.h4-style { font-family: monospace; font-size: 1.05em; font-weight: bold; color: #117a65; margin: 0.8rem 0 0.3rem; }
+.h5-style { font-family: sans-serif; font-size: 1em; font-style: italic; color: #5d6d7e; margin: 0.6rem 0 0.2rem; }
+
+/* Namespace vs. member separators emitted by filters/rules.lua */
+hr.namespace-rule {
+  border: none;
+  border-top: 3px solid #1a1a1a;
+  margin: 2.5rem 0;
+}
+hr.member-rule {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 1.5rem 0;
+}
+
+
+.none {
+  display: none;
+}

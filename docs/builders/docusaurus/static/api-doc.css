@@ -1,0 +1,144 @@
+body {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0.5in;
+  box-sizing: border-box;
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 0.5in 0.25in;
+  }
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────────
+   Mirrors the PDF output: dark header (#2c3e50) with white bold text,
+   alternating white / light-grey body rows, thin rule borders.             */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.92em;
+  margin: 1rem 0;
+}
+
+thead tr {
+  background-color: #2c3e50;
+  color: #ffffff;
+}
+
+thead th {
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 0.85em;
+  padding: 0.45rem 0.7rem;
+  text-align: left;
+  border: 1px solid #1a3045;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+tbody td {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #dde1e4;
+  vertical-align: top;
+}
+
+tbody tr:hover {
+  background-color: #eaf0f6;
+}
+
+/* ── Docstring section labels ──────────────────────────────────────────────
+   Bold-only paragraphs (**Declaration**, **Parameters**, **Returns** …) are
+   docstring section headers.  Extra top margin separates them from the
+   description text above.                                                   */
+p:has(> strong:only-child) {
+  margin-top: 0.75rem;
+}
+
+/* ── Explicit page break ───────────────────────────────────────────────────
+   <div class="pagebreak"></div> forces a new page when printing.            */
+@media print {
+  .pagebreak {
+    break-before: page;
+  }
+}
+
+/* ── Page groups ───────────────────────────────────────────────────────────
+   <div class="pagegroup"> wraps content that should not be orphaned.
+   Has no visual effect on screen; tells the browser printer not to break
+   inside the group when printing to paper or PDF via browser.               */
+@media print {
+  .pagegroup {
+    break-inside: avoid;
+  }
+}
+
+/* ── Horizontal rules (---) ────────────────────────────────────────────────
+   Override the browser default (short, centred, 3D-looking) with a full-width
+   flat grey line that matches the member-rule style.                         */
+hr {
+  border: none;
+  border-top: 1px solid #aab7b8;
+  width: 100%;
+  margin: 0.75rem 0;
+}
+
+/* ── Heading-style divs ────────────────────────────────────────────────────
+   Use <div class="h2-style">Title</div> in markdown to get visual heading
+   styling without the element appearing in the table of contents.
+   Pandoc wraps div content in a <p>; the > p rules strip its margins and
+   ensure font/colour properties are applied to the rendered text node.      */
+.h1-style > p,
+.h2-style > p,
+.h3-style > p,
+.h4-style > p,
+.h5-style > p {
+  margin: 0;
+}
+
+.h1-style {
+  font-family: sans-serif;
+  font-size: 2em;
+  font-weight: bold;
+  color: #1a5276;
+  margin: 1.5rem 0 0.4rem;
+}
+
+.h2-style {
+  font-family: sans-serif;
+  font-size: 1.15em;
+  font-weight: bold;
+  color: #5d6d7e;
+  text-transform: uppercase;
+  margin: 1.2rem 0 0.3rem;
+}
+
+.h3-style {
+  font-family: sans-serif;
+  font-size: 1.25em;
+  font-weight: bold;
+  color: #1a5276;
+  margin: 1rem 0 0.3rem;
+}
+
+.h4-style {
+  font-family: monospace;
+  font-size: 1.05em;
+  font-weight: bold;
+  color: #117a65;
+  margin: 0.8rem 0 0.3rem;
+}
+
+.h5-style {
+  font-family: sans-serif;
+  font-size: 1em;
+  font-style: italic;
+  color: #5d6d7e;
+  margin: 0.6rem 0 0.2rem;
+}
