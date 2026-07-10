@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thirdparty-apkd"
+description = "Android Application Analysis"
+# Note: No idea the real version required at this time.
+requires-python = ">=3.9"
+
+dependencies = [
+    "argcomplete",
+]
+
+# Requires PEP 621 (setuptools>=61)
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {file = "VERSION"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+
+[project.scripts]
+apkd = "thirdparty.apkd.cli:main"
+
