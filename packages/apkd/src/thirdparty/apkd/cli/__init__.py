@@ -1,13 +1,17 @@
+
+import logging
+log = logging.getLogger(__name__)
+
+
 import argparse
 import sys
-
 import argcomplete
 
-def main():
+
+def init_argparse():
     # --- apkd
     apkd_parser = argparse.ArgumentParser(prog="apkd")
-    apkd_parser.add_argument("--config", dest="config", action="store", help="config.yaml")
-    apkd_parser.add_argument("--breakpoint", dest="breakpoint", action="store_true", help="breakpoint() after operation")
+    #apkd_parser.add_argument("--config", dest="config", action="store", help="config.yaml")
     apkd_parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
     apkd_parser.add_argument(
         "--log-level",
@@ -36,6 +40,16 @@ def main():
     apkd_apk_ls_parser = apkd_apk_subparsers.add_parser("ls")
     apkd_apk_ls_parser.add_argument("apk_path")
     apkd_apk_ls_parser.set_defaults(func=apkd_apk_ls_func)
+
+    # --- apkd apk manifest
+    apkd_apk_manifest_parser = apkd_apk_subparsers.add_parser("manifest")
+    apkd_apk_manifest_parser.add_argument("apk_path")
+    apkd_apk_manifest_parser.set_defaults(func=apkd_apk_manifest_func)
+
+    # --- apkd apk resources
+    apkd_apk_resources_parser = apkd_apk_subparsers.add_parser("resources")
+    apkd_apk_resources_parser.add_argument("apk_path")
+    apkd_apk_resources_parser.set_defaults(func=apkd_apk_resources_func)
 
     # --- apkd apk extract
     apkd_apk_extract_parser = apkd_apk_subparsers.add_parser("extract")
@@ -124,8 +138,27 @@ def main():
     apkd_runtime_easy_debug_parser.add_argument("application")
     apkd_runtime_easy_debug_parser.set_defaults(func=apkd_runtime_easy_debug_func)
 
+    return apkd_parser
+
+
+def main():
+    apkd_parser = init_argparse()
     argcomplete.autocomplete(apkd_parser)
     args = apkd_parser.parse_args()
+
+    level = {
+        0: logging.ERROR,
+        1: logging.WARNING,
+        2: logging.INFO,
+        3: logging.DEBUG,
+    }.get(args.verbose, logging.DEBUG)
+
+    logging.basicConfig(level=level, format="%(levelname)-8s %(name)s: %(message)s")
+
+    for spec in args.log_level:
+        module, level_name = spec.split(":")
+        logging.getLogger(module).setLevel(getattr(logging, level_name.upper()))
+
     args.func(args)
 
 
@@ -192,138 +225,37 @@ def apkd_apk_ls_func(args):
     list_zip_like_ls(args.apk_path)
 
 
-def apkd_apk_extract_func(args):
-    from pathlib import Path
-    import shutil
-    import os
-    import subprocess
+def apkd_apk_manifest_func(args):
+    from thirdparty.apkd.apk.manifest import get_manifest
+    print(get_manifest(args.apk_path))
 
+
+def apkd_apk_resources_func(args):
+    print("apkd_apk_resources_func not implemented")
+
+
+def apkd_apk_extract_func(args):
+
+    # TODO: If we're missing the config, must quit.
     from thirdparty.apkd.config.load import load_apkd_config
-    config_dir = Path(os.environ["HOME"]) / ".config" / "apkd"
     config = load_apkd_config()
 
-    # Do we have config and key?
-    # - No? ... tell user to config init and bail.
+    # Extract everything.
+    from thirdparty.apkd.apk.lib import do_extraction_process
+    do_extraction_process(config, args.apk_path, args.apk_content_path)
 
-    folders = {
-        ".original": ["pkg", "apk"],
-        "working": ["apk", "dex", "pkg", "elf"],
-        ".build": ["pkg", "dex", "apk", "elf"],
-    }
-
-    apkalias_path = Path(args.apk_content_path)
-    apkalias_path.resolve()
-    for tlf in folders:
-        for folder in folders[tlf]:
-            fpath = apkalias_path / tlf / folder
-            fpath.mkdir(parents=True, exist_ok=True)
-
-    # Get our own copy of original apk
-    original_sig_path = apkalias_path / ".original" / "pkg" / "original-sig.apk"
-    shutil.copy2(args.apk_path, str(original_sig_path))
-
-    # Re-sign our copy of APK for a bit more consistency.
-    original_resigned_path = apkalias_path / ".original" / "pkg" / "original-resigned.apk"
-    # ! TODO: Do the re-sign
-    # **Temporarily copy original sig as resigned.
-    shutil.copy2(args.apk_path, str(original_resigned_path))
-
-    # Extract content from original-resigned.apk
-    original_apk_path = apkalias_path / ".original" / "apk"
-    from thirdparty.apkd.apk.extract import extract_zip
-    extract_zip(str(original_resigned_path), str(original_apk_path))
-
-    # Extract original to working
-    working_apk_path = apkalias_path / "working" / "apk"
-    from thirdparty.apkd.apk.extract import extract_zip
-    extract_zip(str(original_resigned_path), str(working_apk_path))
-    #
-
-    # Decode manifest.
-    original_manifest_path = original_apk_path / "AndroidManifest.xml"
-    working_manifest_path = working_apk_path / "AndroidManifest.xml"
-    from thirdparty.apkd.apk.manifest import decode_manifest
-    decode_manifest(str(original_manifest_path), str(working_manifest_path))
-
-    # Decode resources.
-    original_resources_path = original_apk_path / "resources.arsc"
-    working_resources_path = working_apk_path / "resources.arsc"
-    from thirdparty.apkd.apk.resources import resources_to_textproto
-    resources_to_textproto(str(original_resources_path), str(working_resources_path))
-
-    # Extract dex and remove
-    # TODO: Fetch baksmali_jar from config
-    #baksmali_jar = "./cache/tools/baksmali-3.0.9-fat.jar"
-    baksmali_jar = config["jars"]["baksmali"]
-    working_dex_prefix = apkalias_path / "working" / "dex"
-    from thirdparty.apkd.apk.dex import dex_disassemble_and_remove
-    dex_disassemble_and_remove(str(working_apk_path), baksmali_jar, working_dex_prefix)
-
-    # --- Rebuild everything ---
-
-    # Initially copy working/apk to .build/apk
-    build_apk_path = apkalias_path / ".build" / "apk"
-    shutil.copytree(str(working_apk_path), str(build_apk_path), symlinks=True, dirs_exist_ok=True)
-
-    # Encode AndroidManifest.xml
-    build_resources_path = build_apk_path / "AndroidManifest.xml"
-    from thirdparty.apkd.apk.manifest import encode_manifest
-    encode_manifest(str(working_manifest_path), str(build_resources_path))
-
-    # Encode resource.arsc
-    build_resources_path = build_apk_path / "resources.arsc"
-    from thirdparty.apkd.apk.resources import resources_from_textproto
-    resources_from_textproto(str(working_resources_path), str(build_resources_path))
-
-    # Reconstruct all dex files
-    smali_jar = config["jars"]["smali"]
-    #smali_jar = "./cache/tools/smali-3.0.9-fat.jar"
-    from thirdparty.apkd.apk.dex import dex_reassemble_all
-    dex_reassemble_all(working_dex_prefix, smali_jar, build_apk_path)
-
-    # Build unaligned APK
-    build_unaligned_apk_path = apkalias_path / ".build" / "pkg" / "unaligned.apk"
-    build_unsigned_apk_path = apkalias_path / ".build" / "pkg" / "unsigned.apk"
-    working_pkg_path = apkalias_path / "working" / "pkg"
-    working_apk_path = working_pkg_path / "working.apk"
-    from thirdparty.apkd.apk.pack import build_apk_zip
-    build_apk_zip(build_apk_path, build_unaligned_apk_path)
-
-    # Build unsigned (i.e. aligned) apk
-    from thirdparty.apkd.apk.pack import apply_source_alignment
-    # Fetch zipalign_path from config
-    zipalign_path = config["binaries"]["zipalign"]
-    #zipalign_path = "/opt/ityssd/aosp/prebuilts/sdk/tools/linux/bin/zipalign"
-    apply_source_alignment(str(original_resigned_path), str(build_unaligned_apk_path), str(build_unsigned_apk_path), zipalign_path=zipalign_path)
-
-    # Sign apk
-    apksigner_path = config["jars"]["apksigner"]
-    java_path = config["binaries"]["java"]
-
-    ks_name = config["default_keystore"]
-    ks_prefix = config_dir / "keystores"
-    ks_config = config["keystores"][ks_name]
-    key_alias = config["default_keyalias"]
-    key_config = ks_config["keys"][key_alias]
-    ks_pass = ks_config["kspass"]
-    key_pass = key_config["keypass"]
-    dname = key_config["dn"]
-
-    cmd = [
-        java_path, '-jar', apksigner_path, 'sign',
-        '--ks', str(ks_prefix / ks_name),
-        '--ks-key-alias', key_alias,
-        '--ks-pass', f'pass:{ks_pass}',
-        '--key-pass', f'pass:{key_pass}',
-        '--out', str(working_apk_path),
-        str(build_unsigned_apk_path),
-    ]
-    print(' '.join(cmd))
-    subprocess.run(cmd, check=True)
+    # Rebuild everything.
+    from thirdparty.apkd.apk.lib import do_pack_process
+    do_pack_process(config, args.apk_content_path)
 
 
 def apkd_apk_patch_debug_func(args):
-    print("apkd_apk_patch_debug_func not implemented")
+    from pathlib import Path
+    apkalias_path = Path(args.apk_content_path)
+    apkalias_path.resolve()
+    working_manifest_path = apkalias_path / "working" / "apk" / "AndroidManifest.xml"
+    from thirdparty.apkd.apk.patch import set_debuggable
+    set_debuggable(str(working_manifest_path))
 
 
 def apkd_apk_patch_frida_func(args):
@@ -331,55 +263,14 @@ def apkd_apk_patch_frida_func(args):
 
 
 def apkd_apk_pack_func(args):
-    from thirdparty.apkd.apk.pack import encode_manifest, apply_source_alignment
-    from pathlib import Path
-    import shutil
-    import subprocess
 
-    original_apk_path = Path(args.apk_content_path) / "original.apk"
-    original_apk_path.resolve()
-    unaligned_apk_path = Path(args.apk_content_path) / "unaligned.apk"
-    unaligned_apk_path.resolve()
-    unsigned_apk_path = Path(args.apk_content_path) / "unsigned.apk"
-    unsigned_apk_path.resolve()
-    working_apk_path = Path(args.apk_content_path) / "working.apk"
-    working_apk_path.resolve()
+    # TODO: If we're missing the config, must quit.
+    from thirdparty.apkd.config.load import load_apkd_config
+    config = load_apkd_config()
 
-    apk_working_path = Path(args.apk_content_path) / "working"
-    apk_working_path.resolve()
-    apk_build_path = Path(args.apk_content_path) / "build"
-    apk_build_path.resolve()
-
-    # Mirror working into build
-    shutil.rmtree(str(apk_build_path))
-    shutil.copytree(str(apk_working_path), str(apk_build_path), symlinks=True, dirs_exist_ok=True)
-
-    # Encode apk
-    working_manifest_path = apk_working_path / "AndroidManifest.xml"
-    build_manifest_path = apk_build_path / "AndroidManifest.xml"
-    encode_manifest(str(working_manifest_path), str(build_manifest_path))
-
-    # Build unaligned apk
-    # ! TODO: We must use apktool to extract to use it for building. It needs a yml metadata file.
-    apktool_cmd = 'java -jar ./cache/tools/apktool_2.12.0.jar'
-    cmd = [*apktool_cmd.split(), 'b', '-o', str(unaligned_apk_path), str(apk_build_path)]
-    print(' '.join(cmd))
-    subprocess.run(cmd, check=True)
-
-    # Build unsigned apk
-    apply_source_alignment(str(original_apk_path), str(unaligned_apk_path), str(unsigned_apk_path))
-    
-    # apksigner sign
-    # cmd = [
-    #     'apksigner', 'sign',
-    #     '--ks', args.keystore,
-    #     '--ks-key-alias', args.keyname,
-    #     '--ks-pass', f'pass:{args.kspass}',
-    #     '--key-pass', f'pass:{args.keypass}',
-    #     '--out', str(working_apk_path),
-    #     str(unsigned_apk_path),
-    # ]
-    # subprocess.run(cmd, check=True)
+    # Rebuild everything.
+    from thirdparty.apkd.apk.lib import do_pack_process
+    do_pack_process(config, args.apk_content_path)
 
 
 def apkd_apk_debugify_func(args):

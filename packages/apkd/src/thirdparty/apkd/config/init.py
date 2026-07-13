@@ -1,3 +1,7 @@
+import logging
+log = logging.getLogger(__name__)
+
+
 #!/usr/bin/env python3
 """
 Create a keystore + signing key for apkd, fully unattended.

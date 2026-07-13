@@ -1,4 +1,5 @@
-
+import logging
+log = logging.getLogger(__name__)
 
 def get_resources(apk_path, rsc_id=None):
     from androguard.core.apk import APK

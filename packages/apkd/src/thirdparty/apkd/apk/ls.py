@@ -1,3 +1,7 @@
+import logging
+log = logging.getLogger(__name__)
+
+
 import zipfile
 import stat
 from datetime import datetime

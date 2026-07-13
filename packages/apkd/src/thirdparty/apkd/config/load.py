@@ -1,3 +1,6 @@
+import logging
+log = logging.getLogger(__name__)
+
 
 def load_apkd_config():
     import os

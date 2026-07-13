@@ -1,3 +1,8 @@
+import logging
+log = logging.getLogger(__name__)
+
+
+
 #!/usr/bin/env python3
 """
 For each .dex file in `dex_path`, disassemble it to smali using baksmali
