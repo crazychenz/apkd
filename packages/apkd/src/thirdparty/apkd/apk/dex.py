@@ -27,6 +27,7 @@ def disassemble_dex(dex_file: str, baksmali_jar: str, out_dir: str) -> bool:
         dex_file,
         "-o", out_dir,
     ]
+    print(' '.join(cmd))
 
     result = subprocess.run(
         cmd,
@@ -120,6 +121,7 @@ def reassemble_folder(smali_dir: str, smali_jar: str, out_dex: str) -> bool:
         smali_dir,
         "-o", out_dex,
     ]
+    print(' '.join(cmd))
 
     result = subprocess.run(
         cmd,

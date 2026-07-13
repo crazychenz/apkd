@@ -18,6 +18,16 @@ def main():
     )
     apkd_subparsers = apkd_parser.add_subparsers(dest="category", required=True)
 
+    # --- apkd config
+    apkd_config_parser = apkd_subparsers.add_parser("config", help="Config management")
+    apkd_config_subparsers = apkd_config_parser.add_subparsers(dest="config_command", required=True)
+
+    # --- apkd config init
+    apkd_config_init_parser = apkd_config_subparsers.add_parser("init")
+    # TODO: Allow a config path.
+    #apkd_config_init_parser.add_argument("config_path")
+    apkd_config_init_parser.set_defaults(func=apkd_config_init_func)
+
     # --- apkd apk
     apkd_apk_parser = apkd_subparsers.add_parser("apk", help="Static APK analysis")
     apkd_apk_subparsers = apkd_apk_parser.add_subparsers(dest="apk_command", required=True)
@@ -119,6 +129,64 @@ def main():
     args.func(args)
 
 
+def apkd_config_init_func(args):
+    import os
+    import yaml
+    from pathlib import Path
+
+    config_dir = Path(os.environ["HOME"]) / ".config" / "apkd"
+
+    if config_dir.exists():
+        print(f"Error: {config_dir} configuration folder exists. Remove and retry to initialize.", file=sys.stderr)
+        sys.exit(1)
+
+    config_dir.mkdir(parents=True)
+
+    config = {
+        "binaries": {
+            "java": "java",
+            "keytool": "keytool",
+            "zipalign": "zipalign",
+            "apksigner": "apksigner",
+        },
+        "jars": {
+            "apksigner": "apksigner.jar",
+            "baksmali": "baksmali.jar",
+            "smali": "smali.jar",
+            "apktool": "apktool.jar",
+        },
+        "default_keystore": "default",
+        "default_keyalias": "default",
+        "keystores": {
+            "default": {
+                "kspass": "default",
+                "keys": {
+                    "default": {
+                        "keypass": "default",
+                        "dn": "CN=apkd, OU=apkd, O=apkd, L=Unknown, ST=Unknown, C=US",
+                    },
+                },
+            },
+        },
+    }
+
+    with open(str(config_dir / "config.yaml"), "w") as f:
+        yaml.dump(config, f)
+    
+    from thirdparty.apkd.config.init import create_keystore
+    
+    ks_name = config["default_keystore"]
+    ks_prefix = config_dir / "keystores"
+    ks_config = config["keystores"][ks_name]
+    key_alias = config["default_keyalias"]
+    key_config = ks_config["keys"][key_alias]
+    ks_pass = ks_config["kspass"]
+    key_pass = key_config["keypass"]
+    dname = key_config["dn"]
+
+    create_keystore(str(ks_prefix), ks_pass, key_pass, keystore_name=ks_name, key_alias=key_alias, dname=dname)
+
+
 def apkd_apk_ls_func(args):
     from thirdparty.apkd.apk.ls import list_zip_like_ls
     list_zip_like_ls(args.apk_path)
@@ -127,6 +195,12 @@ def apkd_apk_ls_func(args):
 def apkd_apk_extract_func(args):
     from pathlib import Path
     import shutil
+    import os
+    import subprocess
+
+    from thirdparty.apkd.config.load import load_apkd_config
+    config_dir = Path(os.environ["HOME"]) / ".config" / "apkd"
+    config = load_apkd_config()
 
     # Do we have config and key?
     # - No? ... tell user to config init and bail.
@@ -179,7 +253,8 @@ def apkd_apk_extract_func(args):
 
     # Extract dex and remove
     # TODO: Fetch baksmali_jar from config
-    baksmali_jar = "./cache/baksmali-3.0.9-fat.jar"
+    #baksmali_jar = "./cache/tools/baksmali-3.0.9-fat.jar"
+    baksmali_jar = config["jars"]["baksmali"]
     working_dex_prefix = apkalias_path / "working" / "dex"
     from thirdparty.apkd.apk.dex import dex_disassemble_and_remove
     dex_disassemble_and_remove(str(working_apk_path), baksmali_jar, working_dex_prefix)
@@ -201,8 +276,10 @@ def apkd_apk_extract_func(args):
     resources_from_textproto(str(working_resources_path), str(build_resources_path))
 
     # Reconstruct all dex files
+    smali_jar = config["jars"]["smali"]
+    #smali_jar = "./cache/tools/smali-3.0.9-fat.jar"
     from thirdparty.apkd.apk.dex import dex_reassemble_all
-    dex_reassemble_all(working_dex_prefix, baksmali_jar, build_apk_path)
+    dex_reassemble_all(working_dex_prefix, smali_jar, build_apk_path)
 
     # Build unaligned APK
     build_unaligned_apk_path = apkalias_path / ".build" / "pkg" / "unaligned.apk"
@@ -214,19 +291,35 @@ def apkd_apk_extract_func(args):
 
     # Build unsigned (i.e. aligned) apk
     from thirdparty.apkd.apk.pack import apply_source_alignment
-    apply_source_alignment(str(original_resigned_path), str(build_unaligned_apk_path), str(build_unsigned_apk_path))
+    # Fetch zipalign_path from config
+    zipalign_path = config["binaries"]["zipalign"]
+    #zipalign_path = "/opt/ityssd/aosp/prebuilts/sdk/tools/linux/bin/zipalign"
+    apply_source_alignment(str(original_resigned_path), str(build_unaligned_apk_path), str(build_unsigned_apk_path), zipalign_path=zipalign_path)
 
-    # TODO: Sign apk
-    # cmd = [
-    #     'apksigner', 'sign',
-    #     '--ks', args.keystore,
-    #     '--ks-key-alias', args.keyname,
-    #     '--ks-pass', f'pass:{args.kspass}',
-    #     '--key-pass', f'pass:{args.keypass}',
-    #     '--out', str(working_apk_path),
-    #     str(unsigned_apk_path),
-    # ]
-    # subprocess.run(cmd, check=True)
+    # Sign apk
+    apksigner_path = config["jars"]["apksigner"]
+    java_path = config["binaries"]["java"]
+
+    ks_name = config["default_keystore"]
+    ks_prefix = config_dir / "keystores"
+    ks_config = config["keystores"][ks_name]
+    key_alias = config["default_keyalias"]
+    key_config = ks_config["keys"][key_alias]
+    ks_pass = ks_config["kspass"]
+    key_pass = key_config["keypass"]
+    dname = key_config["dn"]
+
+    cmd = [
+        java_path, '-jar', apksigner_path, 'sign',
+        '--ks', str(ks_prefix / ks_name),
+        '--ks-key-alias', key_alias,
+        '--ks-pass', f'pass:{ks_pass}',
+        '--key-pass', f'pass:{key_pass}',
+        '--out', str(working_apk_path),
+        str(build_unsigned_apk_path),
+    ]
+    print(' '.join(cmd))
+    subprocess.run(cmd, check=True)
 
 
 def apkd_apk_patch_debug_func(args):

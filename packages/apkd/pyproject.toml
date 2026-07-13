@@ -12,6 +12,7 @@ dependencies = [
     "argcomplete",
     "pyaxml",
     "androguard",
+    "pyyaml",
     #"protobuf", implicitly part of pyaxml
 ]
 

@@ -28,14 +28,14 @@ def build_apk_zip(src_dir: str, out_zip: str) -> None:
     print(f"Wrote {out_zip}")
 
 
-def detect_zipalign_args(apk_path, candidates=(4, 8, 16)):
+def detect_zipalign_args(apk_path, zipalign_path="zipalign", candidates=(4, 8, 16)):
     import zipfile
     import subprocess
     import struct
     """Return the zipalign args (e.g. ['-p', '4']) that reproduce apk_path's alignment."""
     align = next(
         (c for c in candidates
-         if subprocess.run(['zipalign', '-c', '-v', str(c), apk_path],
+         if subprocess.run([zipalign_path, '-c', '-v', str(c), apk_path],
                             capture_output=True).returncode == 0),
         4,
     )
@@ -53,14 +53,14 @@ def detect_zipalign_args(apk_path, candidates=(4, 8, 16)):
     return (['-p', str(align)] if page_aligned else [str(align)])
 
 
-def apply_source_alignment(src_apk, dst_apk, out_apk):
+def apply_source_alignment(src_apk, dst_apk, out_apk, zipalign_path="zipalign"):
     import subprocess
     import shutil
-    if shutil.which("zipalign") is None:
+    if shutil.which(zipalign_path) is None:
         raise FileNotFoundError("zipalign not found on PATH — check your Android SDK build-tools installation")
 
-    args = detect_zipalign_args(src_apk)
-    subprocess.run(['zipalign', '-f', *args, dst_apk, out_apk], check=True)
+    args = detect_zipalign_args(src_apk, zipalign_path=zipalign_path)
+    subprocess.run([zipalign_path, '-f', *args, dst_apk, out_apk], check=True)
 
 
 
