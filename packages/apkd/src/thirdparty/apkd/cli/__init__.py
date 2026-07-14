@@ -32,6 +32,18 @@ def init_argparse():
     #apkd_config_init_parser.add_argument("config_path")
     apkd_config_init_parser.set_defaults(func=apkd_config_init_func)
 
+    # --- apkd env
+    apkd_env_parser = apkd_subparsers.add_parser("env", help="Env management")
+    apkd_env_subparsers = apkd_env_parser.add_subparsers(dest="env_command", required=True)
+
+    # --- apkd env init
+    apkd_env_init_parser = apkd_env_subparsers.add_parser("init")
+    apkd_env_init_parser.set_defaults(func=apkd_env_init_func)
+
+    # --- apkd env source
+    apkd_env_source_parser = apkd_env_subparsers.add_parser("source")
+    apkd_env_source_parser.set_defaults(func=apkd_env_source_func)
+
     # --- apkd apk
     apkd_apk_parser = apkd_subparsers.add_parser("apk", help="Static APK analysis")
     apkd_apk_subparsers = apkd_apk_parser.add_subparsers(dest="apk_command", required=True)
@@ -92,22 +104,44 @@ def init_argparse():
     apkd_emu_parser = apkd_subparsers.add_parser("emu", help="Android emulator management")
     apkd_emu_subparsers = apkd_emu_parser.add_subparsers(dest="emu_command", required=True)
 
-    # --- apkd emu get
-    apkd_emu_get_parser = apkd_emu_subparsers.add_parser("get")
-    apkd_emu_get_parser.add_argument("spec")
-    apkd_emu_get_parser.set_defaults(func=apkd_emu_get_func)
+    # --- apkd emu list-remote
+    apkd_emu_list_remote_parser = apkd_emu_subparsers.add_parser("list-remote")
+    apkd_emu_list_remote_parser.set_defaults(func=apkd_emu_list_remote_func)
+
+    # --- apkd emu pull
+    apkd_emu_pull_parser = apkd_emu_subparsers.add_parser("pull")
+    apkd_emu_pull_parser.add_argument("spec")
+    apkd_emu_pull_parser.set_defaults(func=apkd_emu_pull_func)
+
+    # --- apkd emu pull
+    apkd_emu_images_parser = apkd_emu_subparsers.add_parser("images")
+    apkd_emu_images_parser.set_defaults(func=apkd_emu_images_func)
 
     # --- apkd emu create
     apkd_emu_create_parser = apkd_emu_subparsers.add_parser("create")
+    apkd_emu_create_parser.add_argument("name")
+    apkd_emu_create_parser.add_argument("package")
+    apkd_emu_create_parser.add_argument("--device", action="store", default=None)
+    apkd_emu_create_parser.add_argument("--force", action="store_true", default=False)
     apkd_emu_create_parser.set_defaults(func=apkd_emu_create_func)
+
+    # --- apkd emu ps
+    apkd_emu_ps_parser = apkd_emu_subparsers.add_parser("ps")
+    apkd_emu_ps_parser.set_defaults(func=apkd_emu_ps_func)
 
     # --- apkd emu start
     apkd_emu_start_parser = apkd_emu_subparsers.add_parser("start")
+    apkd_emu_start_parser.add_argument("name")
     apkd_emu_start_parser.set_defaults(func=apkd_emu_start_func)
 
     # --- apkd emu stop
     apkd_emu_stop_parser = apkd_emu_subparsers.add_parser("stop")
+    apkd_emu_stop_parser.add_argument("name")
     apkd_emu_stop_parser.set_defaults(func=apkd_emu_stop_func)
+
+
+
+
 
     # --- apkd runtime
     apkd_runtime_parser = apkd_subparsers.add_parser("runtime", help="Android runtime management")
@@ -165,6 +199,65 @@ def main():
 def apkd_config_init_func(args):
     from thirdparty.apkd.config.init import init_apkd_config_dir
     init_apkd_config_dir()
+
+
+def apkd_env_init_func(args):
+
+    import os
+
+    # TODO: If we're missing the config, must quit.
+    from thirdparty.apkd.config.load import load_apkd_config
+    config = load_apkd_config()
+
+    from thirdparty.apkd.env.init import extract_openjdk, setup_android_cmdline_tools
+    from pathlib import Path
+
+    # Apply environment. (Ideally already part of external environment.)
+    # TODO: Consider CLI or ENV overrides.
+    apkd_env_source_func(args)
+
+    envs_dir = Path("cache") / "envs"
+    defaultenv_dir = envs_dir / "default"
+    defaultenv_dir.mkdir(parents=True, exist_ok=True)
+    downloads_dir = Path("cache") / "downloads"
+
+    java17_archive_path = downloads_dir / config["downloads"]["java17"]["linux-x64"]["cache"]
+    extract_openjdk(java17_archive_path, os.environ["JAVA_HOME"])
+
+    cmdlinetools_archive_path = downloads_dir / config["downloads"]["commandlinetools"]["linux"]["cache"]
+    setup_android_cmdline_tools(cmdlinetools_archive_path, os.environ["ANDROID_HOME"])
+
+    import subprocess
+    # Install platform tools.
+    subprocess.run(
+        'yes | sdkmanager "platform-tools" emulator',
+        shell=True,
+        check=True,
+    )
+
+# (eval "$(apkd env source)" && bash)
+def apkd_env_source_func(args):
+
+    import os
+    from pathlib import Path
+
+    # TODO: If we're missing the config, must quit.
+    from thirdparty.apkd.config.load import load_apkd_config
+    config = load_apkd_config()
+
+    for var, vals in config["envs"]["default"].items():
+        if isinstance(vals, list):
+            result = []
+            if len(os.environ[var]):
+                result.append(os.environ[var])
+            for val in vals:
+                p = Path(os.path.expandvars(val)).resolve()
+                result.append(str(p))
+            os.environ[var] = ':'.join(result)
+        else:
+            p = Path(os.path.expandvars(vals)).resolve()
+            os.environ[var] = str(p)
+        print(f"export {var}={os.environ[var]}")
 
 
 def apkd_apk_ls_func(args):
@@ -244,27 +337,165 @@ def apkd_apk_debugify_func(args):
 
 # --- Emulator Management ---
 
-# ! TODO: Consider scrcpy integration.
+def apkd_emu_list_remote_func(args):
+    import subprocess
 
-def apkd_emu_get_func(args):
-    # TODO: Use sdkmanager
-    print("apkd_emu_get_func not implemented")
+    print("Fetching sdbmanager packages. May take a moment if not recently cached.")
+    result = subprocess.run(
+        ['sdkmanager', '--list'],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    tgts = {}
+    for line in result.stdout.splitlines():
+        items = line.split('|')
+        if len(items) > 2:
+            pkg = items[0].strip()
+
+            version = items[1].strip()
+            desc = items[2].strip()
+            tgts[pkg] = {
+                "tags": pkg.split(';'),
+                "pkg": pkg,
+                "version": version,
+                "desc": desc,
+            }
+    
+    # TODO: Make these user specified.
+    query = set(['system-images', 'x86_64', 'android-33'])
+    results = {key: item for key, item in tgts.items() if query.issubset(item["tags"])}
+    for name, pkg in results.items():
+        print(f"{name}\n    {pkg['desc']}")
+
+
+# apkd emu pull "system-images;android-33;default;x86_64"
+def apkd_emu_pull_func(args):
+    import subprocess
+    print(f"Pulling {args.spec}")
+    result = subprocess.run(['sdkmanager', args.spec], check=True)
+
+
+def apkd_emu_images_func(args):
+    import subprocess
+    print(f"Installed System Images:")
+    result = subprocess.run(
+        ['sdkmanager', '--list_installed'],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    tgts = {}
+    for line in result.stdout.splitlines():
+        items = line.split('|')
+        if len(items) > 2:
+            pkg = items[0].strip()
+
+            version = items[1].strip()
+            desc = items[2].strip()
+            tgts[pkg] = {
+                "tags": pkg.split(';'),
+                "pkg": pkg,
+                "version": version,
+                "desc": desc,
+            }
+    
+    # TODO: Make these user specified.
+    query = set(['system-images'])
+    results = {key: item for key, item in tgts.items() if query.issubset(item["tags"])}
+    for name, pkg in results.items():
+        print(f"- {name}\n    + {pkg['desc']}")
+
+
+# emulator -list-avds
 
 
 def apkd_emu_create_func(args):
-    # TODO: Use avdmanager to create emu instance
-    print("apkd_emu_create_func not implemented")
+    import subprocess
+    
+    #avdmanager create avd -n android13 -k "system-images;android-33;default;x86_64"
+
+    cmd = [
+        "avdmanager",
+        "create", "avd",
+        "--name", args.name,
+        "--package", args.package,
+    ]
+    if args.device:
+        cmd += ["--device", device]
+    if args.force:
+        cmd.append("--force")  # overwrite existing AVD with same name, no prompt for that either
+
+    subprocess.run(
+        cmd,
+        input="no\n",   # answer to "Do you wish to create a custom hardware profile?"
+        text=True,
+        check=True,
+    )
+
+    
+def apkd_emu_ps_func(args):
+    import subprocess
+    subprocess.run(["avdmanager", "list", "avds"], check=True)
 
 
 def apkd_emu_start_func(args):
-    # TODO: Start the emu instance with emulator command.
-    print("apkd_emu_start_func not implemented")
+    import tempfile
+    import subprocess
+    import os
+
+    cmd = [
+        'emulator',
+        '-avd',
+        args.name,
+        '-no-snapshot',
+        '-writable-system',
+        '-show-kernel',
+        '-verbose',
+        '-no-audio',
+        '-no-window',
+    ]
+
+    fd, log_path = tempfile.mkstemp(prefix="apkd_emu_", suffix=".log")
+    log_file = os.fdopen(fd, "w")
+
+    proc = subprocess.Popen(
+        cmd,
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+
+    print(f"Started emulator, pid={proc.pid}, log={log_path}")
+    print(f"Can monitor with: tail -f {log_path}")
+    #return proc, log_path
 
 
 def apkd_emu_stop_func(args):
-    # TODO: Stop the emu instance by killing emulator
-    print("apkd_emu_stop_func not implemented")
+    import subprocess
 
+    result = subprocess.run(
+        ["pgrep", "-f", f"emulator.*-avd {args.name}"],
+        capture_output=True, text=True,
+    )
+    pids = [pid for pid in result.stdout.splitlines() if pid.strip()]
+
+    if not pids:
+        print(f"No process found for AVD '{args.name}'")
+        exit(1)
+        #return False
+
+    for pid in pids:
+        subprocess.run(["kill", pid], check=True)
+        print(f"Sent SIGTERM to pid {pid}")
+
+    #return True
+
+
+# ! TODO: Consider scrcpy integration.
 
 # --- ADB Automation ---
 

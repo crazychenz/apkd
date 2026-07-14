@@ -17,7 +17,6 @@ import sys
 from pathlib import Path
 
 
-
 def init_apkd_config_dir():
     import os
     import yaml
@@ -32,6 +31,22 @@ def init_apkd_config_dir():
     config_dir.mkdir(parents=True)
 
     config = {
+        "envs": {
+            "default": {
+                "BASE_PATH": "cache/envs/default/",
+                "ANDROID_HOME": "${BASE_PATH}android/",
+                "JAVA_HOME": "${BASE_PATH}java17/",
+                "PATH": [
+                    "${JAVA_HOME}bin",
+                    "${ANDROID_HOME}cmdline-tools/latest/bin",
+                    "${ANDROID_HOME}platform-tools",
+                    "${ANDROID_HOME}emulator",
+                    "${ANDROID_HOME}scrcpy",
+                    "${ANDROID_HOME}jadx/bin",
+                    "${ANDROID_HOME}misc-tools",
+                ],
+            },
+        },
         "binaries": {
             "java": "java",
             "keytool": "keytool",
@@ -56,6 +71,20 @@ def init_apkd_config_dir():
                 "arm64-v8a": "frida-server-17.15.5-android-arm64",
                 "x86": "frida-server-17.15.5-android-x86",
                 "x86_64": "frida-server-17.15.5-android-x86_64",
+            },
+        },
+        "downloads": {
+            "java": {
+                "linux-x64": {
+                    "upstream": "https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz",
+                    "cache": "openjdk-17.0.2_linux-x64_bin.tar.gz",
+                },
+            },
+            "commandlinetools": {
+                "linux": {
+                    "upstream": "unset",
+                    "cache": "commandlinetools-linux-14742923_latest.zip",
+                },
             },
         },
         "default_keystore": "default",
