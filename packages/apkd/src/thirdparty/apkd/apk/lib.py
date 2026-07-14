@@ -99,3 +99,48 @@ def do_pack_process(config, apk_content_path):
     working_pkg_path = apkalias_path / "working" / "pkg" / "working.apk"
     from thirdparty.apkd.apk.sign import sign_apk
     sign_apk(config, str(build_unsigned_apk_path), str(working_pkg_path))
+
+
+def patch_in_frida_gadget(apk_content_path):
+
+    from pathlib import Path
+    apkalias_path = Path(apk_content_path)
+    apkalias_path.resolve()
+    working_manifest_path = apkalias_path / "working" / "apk" / "AndroidManifest.xml"
+    from thirdparty.apkd.apk.patch import find_main_activity
+    main_activity = find_main_activity(working_manifest_path)
+
+    if not main_activity:
+        print("No main activity found.")
+        exit(1)
+    
+    print(f"Found main activity at: {main_activity}")
+
+    from thirdparty.apkd.apk.patch import find_smali_file
+    smali_path = find_smali_file(main_activity, str(apkalias_path / "working" / "dex"))
+
+    if not smali_path:
+        print(f"Could not find smali for {main_activity}")
+        exit(1)
+
+    print(f"Found smali at: {smali_path}")
+
+    from thirdparty.apkd.apk.patch import patch_smali_with_gadget
+    patch_smali_with_gadget(smali_path)
+
+    print(f"Patched {smali_path}")
+
+    # TODO: If we're missing the config, must quit.
+    from thirdparty.apkd.config.load import load_apkd_config
+    config = load_apkd_config()
+
+    # Copy gadgets to native folder
+    import shutil
+    working_lib_path = apkalias_path / "working" / "apk" / "lib"
+    for subdir in [d for d in working_lib_path.iterdir() if d.is_dir()]:
+        gadget_src_path = Path("./cache") / "frida" / config["frida"]["gadget"][subdir.name]
+        if not gadget_src_path.exists():
+            print(f"Skipping gadget install for arch: {subdir.name}")
+            continue
+        gadget_dst_path = str(working_lib_path / subdir.name / "libfrida-gadget.so")
+        shutil.copy2(str(gadget_src_path), gadget_dst_path)

@@ -12,7 +12,7 @@ def should_store_uncompressed(arcname: str) -> bool:
     return False
 
 
-def build_apk_zip(src_dir: str, out_zip: str) -> None:
+def build_apk_zip(src_dir: str, out_zip: str, use_compression:bool=False) -> None:
     import zipfile
     with zipfile.ZipFile(out_zip, "w") as zf:
         for root, _dirs, files in os.walk(src_dir):
@@ -20,13 +20,17 @@ def build_apk_zip(src_dir: str, out_zip: str) -> None:
                 full_path = os.path.join(root, fname)
                 arcname = os.path.relpath(full_path, src_dir).replace(os.sep, "/")
 
-                compress_type = (
-                    zipfile.ZIP_STORED
-                    if should_store_uncompressed(arcname)
-                    else zipfile.ZIP_DEFLATED
-                )
+                if use_compression:
+                    compress_type = (
+                        zipfile.ZIP_STORED
+                        if should_store_uncompressed(arcname)
+                        else zipfile.ZIP_DEFLATED
+                    )
 
-                zf.write(full_path, arcname, compress_type=compress_type)
+                    zf.write(full_path, arcname, compress_type=compress_type)
+                else:
+                    # Things are more simple if we do not use compression.
+                    zf.write(full_path, arcname, compress_type=zipfile.ZIP_STORED)
 
     print(f"Wrote {out_zip}")
 

@@ -17,6 +17,81 @@ import sys
 from pathlib import Path
 
 
+
+def init_apkd_config_dir():
+    import os
+    import yaml
+    from pathlib import Path
+
+    config_dir = Path(os.environ["HOME"]) / ".config" / "apkd"
+
+    if config_dir.exists():
+        print(f"Error: {config_dir} configuration folder exists. Remove and retry to initialize.", file=sys.stderr)
+        sys.exit(1)
+
+    config_dir.mkdir(parents=True)
+
+    config = {
+        "binaries": {
+            "java": "java",
+            "keytool": "keytool",
+            "zipalign": "zipalign",
+            "apksigner": "apksigner",
+        },
+        "jars": {
+            "apksigner": "apksigner.jar",
+            "baksmali": "baksmali.jar",
+            "smali": "smali.jar",
+            "apktool": "apktool.jar",
+        },
+        "frida": {
+            "gadget": {
+                "armeabi-v7a": "frida-gadget-17.15.5-android-arm.so",
+                "arm64-v8a": "frida-gadget-17.15.5-android-arm64.so",
+                "x86": "frida-gadget-17.15.5-android-x86.so",
+                "x86_64": "frida-gadget-17.15.5-android-x86_64.so",
+            },
+            "server": {
+                "armeabi-v7a": "frida-server-17.15.5-android-arm",
+                "arm64-v8a": "frida-server-17.15.5-android-arm64",
+                "x86": "frida-server-17.15.5-android-x86",
+                "x86_64": "frida-server-17.15.5-android-x86_64",
+            },
+        },
+        "default_keystore": "default",
+        "default_keyalias": "default",
+        "keystores": {
+            "default": {
+                "kspass": "default",
+                "keys": {
+                    "default": {
+                        "keypass": "default",
+                        "dn": "CN=apkd, OU=apkd, O=apkd, L=Unknown, ST=Unknown, C=US",
+                    },
+                },
+            },
+        },
+    }
+
+    with open(str(config_dir / "config.yaml"), "w") as f:
+        yaml.dump(config, f)
+    
+    from thirdparty.apkd.config.init import create_keystore
+    
+    ks_name = config["default_keystore"]
+    ks_prefix = config_dir / "keystores"
+    ks_config = config["keystores"][ks_name]
+    key_alias = config["default_keyalias"]
+    key_config = ks_config["keys"][key_alias]
+    ks_pass = ks_config["kspass"]
+    key_pass = key_config["keypass"]
+    dname = key_config["dn"]
+
+    create_keystore(str(ks_prefix), ks_pass, key_pass, keystore_name=ks_name, key_alias=key_alias, dname=dname)
+
+
+
+
 def create_keystore(
     ks_prefix: str,
     keystore_password: str,

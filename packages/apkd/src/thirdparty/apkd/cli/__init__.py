@@ -73,10 +73,10 @@ def init_argparse():
 
     # --- apkd apk pack
     apkd_apk_pack_parser = apkd_apk_subparsers.add_parser("pack")
-    apkd_apk_pack_parser.add_argument('--ks', dest="keystore")
-    apkd_apk_pack_parser.add_argument('--kspass', dest="kspass")
-    apkd_apk_pack_parser.add_argument('--key', dest="keyname")
-    apkd_apk_pack_parser.add_argument('--keypass', dest="keypass")
+    # apkd_apk_pack_parser.add_argument('--ks', dest="keystore")
+    # apkd_apk_pack_parser.add_argument('--kspass', dest="kspass")
+    # apkd_apk_pack_parser.add_argument('--key', dest="keyname")
+    # apkd_apk_pack_parser.add_argument('--keypass', dest="keypass")
     apkd_apk_pack_parser.add_argument("apk_content_path")
     #apkd_apk_pack_parser.add_argument("new_apk_path")
     apkd_apk_pack_parser.set_defaults(func=apkd_apk_pack_func)
@@ -85,7 +85,7 @@ def init_argparse():
     apkd_apk_debugify_parser = apkd_apk_subparsers.add_parser("debugify")
     apkd_apk_debugify_parser.add_argument("apk_path")
     apkd_apk_debugify_parser.add_argument("apk_content_path")
-    apkd_apk_debugify_parser.add_argument("new_apk_path")
+    #apkd_apk_debugify_parser.add_argument("new_apk_path")
     apkd_apk_debugify_parser.set_defaults(func=apkd_apk_debugify_func)
 
     # --- apkd emu
@@ -208,7 +208,9 @@ def apkd_apk_patch_debug_func(args):
 
 
 def apkd_apk_patch_frida_func(args):
-    print("apkd_apk_patch_frida_func not implemented")
+
+    from thirdparty.apkd.apk.lib import patch_in_frida_gadget
+    patch_in_frida_gadget(args.apk_content_path)
 
 
 def apkd_apk_pack_func(args):
@@ -223,8 +225,21 @@ def apkd_apk_pack_func(args):
 
 
 def apkd_apk_debugify_func(args):
-    # TODO: Implement this once apkd_apk_patch_frida_func is complete.
-    print("apkd_apk_debugify_func not implemented")
+
+    # TODO: If we're missing the config, must quit.
+    from thirdparty.apkd.config.load import load_apkd_config
+    config = load_apkd_config()
+
+    # Extract everything.
+    from thirdparty.apkd.apk.lib import do_extraction_process
+    do_extraction_process(config, args.apk_path, args.apk_content_path)
+
+    apkd_apk_patch_debug_func(args)
+    apkd_apk_patch_frida_func(args)
+
+    # Rebuild everything.
+    from thirdparty.apkd.apk.lib import do_pack_process
+    do_pack_process(config, args.apk_content_path)
 
 
 # --- Emulator Management ---
