@@ -163,61 +163,8 @@ def main():
 
 
 def apkd_config_init_func(args):
-    import os
-    import yaml
-    from pathlib import Path
-
-    config_dir = Path(os.environ["HOME"]) / ".config" / "apkd"
-
-    if config_dir.exists():
-        print(f"Error: {config_dir} configuration folder exists. Remove and retry to initialize.", file=sys.stderr)
-        sys.exit(1)
-
-    config_dir.mkdir(parents=True)
-
-    config = {
-        "binaries": {
-            "java": "java",
-            "keytool": "keytool",
-            "zipalign": "zipalign",
-            "apksigner": "apksigner",
-        },
-        "jars": {
-            "apksigner": "apksigner.jar",
-            "baksmali": "baksmali.jar",
-            "smali": "smali.jar",
-            "apktool": "apktool.jar",
-        },
-        "default_keystore": "default",
-        "default_keyalias": "default",
-        "keystores": {
-            "default": {
-                "kspass": "default",
-                "keys": {
-                    "default": {
-                        "keypass": "default",
-                        "dn": "CN=apkd, OU=apkd, O=apkd, L=Unknown, ST=Unknown, C=US",
-                    },
-                },
-            },
-        },
-    }
-
-    with open(str(config_dir / "config.yaml"), "w") as f:
-        yaml.dump(config, f)
-    
-    from thirdparty.apkd.config.init import create_keystore
-    
-    ks_name = config["default_keystore"]
-    ks_prefix = config_dir / "keystores"
-    ks_config = config["keystores"][ks_name]
-    key_alias = config["default_keyalias"]
-    key_config = ks_config["keys"][key_alias]
-    ks_pass = ks_config["kspass"]
-    key_pass = key_config["keypass"]
-    dname = key_config["dn"]
-
-    create_keystore(str(ks_prefix), ks_pass, key_pass, keystore_name=ks_name, key_alias=key_alias, dname=dname)
+    from thirdparty.apkd.config.init import init_apkd_config_dir
+    init_apkd_config_dir()
 
 
 def apkd_apk_ls_func(args):
@@ -251,6 +198,7 @@ def apkd_apk_extract_func(args):
 
 
 def apkd_apk_patch_debug_func(args):
+    # TODO: Check that everything is already extracted.
     from pathlib import Path
     apkalias_path = Path(args.apk_content_path)
     apkalias_path.resolve()
@@ -275,23 +223,35 @@ def apkd_apk_pack_func(args):
 
 
 def apkd_apk_debugify_func(args):
+    # TODO: Implement this once apkd_apk_patch_frida_func is complete.
     print("apkd_apk_debugify_func not implemented")
 
 
+# --- Emulator Management ---
+
+# ! TODO: Consider scrcpy integration.
+
 def apkd_emu_get_func(args):
+    # TODO: Use sdkmanager
     print("apkd_emu_get_func not implemented")
 
 
 def apkd_emu_create_func(args):
+    # TODO: Use avdmanager to create emu instance
     print("apkd_emu_create_func not implemented")
 
 
 def apkd_emu_start_func(args):
+    # TODO: Start the emu instance with emulator command.
     print("apkd_emu_start_func not implemented")
 
 
 def apkd_emu_stop_func(args):
+    # TODO: Stop the emu instance by killing emulator
     print("apkd_emu_stop_func not implemented")
+
+
+# --- ADB Automation ---
 
 
 def apkd_runtime_deploy_func(args):
