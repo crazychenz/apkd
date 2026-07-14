@@ -499,9 +499,116 @@ def apkd_emu_stop_func(args):
 
 # --- ADB Automation ---
 
+"""
+in general, the "apkd runtime" should be able to target apk or a apk_content_path (but not both)
+
+The adb user precedence:
+- Note: The precedence may change depending on whether config is explicit or implicit.
+- CLI Argument
+- Config APKD_ADB_PATH variable
+- APKD_ADB_PATH env variable
+- PATH
+- Config PATH variable
+"""
+
 
 def apkd_runtime_deploy_func(args):
+    # TODO: Programtically uninstall and install the target application (referred to by project folder)
     print("apkd_runtime_deploy_func not implemented")
+
+    # TODO: If we're missing the config, must quit.
+    from thirdparty.apkd.config.load import load_apkd_config
+    config = load_apkd_config()
+    adb_host = config["adb"]["default"]["host"]
+    adb_port = int(config["adb"]["default"]["port"])
+    device_name = config["adb"]["default"]["device"]
+    # tgt_pkg = ??
+
+    from ppadb.client import Client as AdbClient
+    client = AdbClient(host=adb_host, port=adb_port)
+
+    # Connection sanity.
+    print(f'ADB Client Version: {client.version()}')
+    device = client.device(device_name)
+    if device is None:
+        raise RuntimeError(f"No device found with serial '{device_serial}'")
+
+    apk_path = Path(args.apk_content_path).resolve() / "working" / "pkg" / "working.apk"
+
+    # Note: Given the project folder, we'll install the working.apk, but we
+    # also need to dynamically pull out the package name with androguard.
+    from androguard.core.apk import APK
+    package_name = APK(str(apk_path)).get_package()
+
+    uninstall_result = device.uninstall(package_name)
+    if uninstall_result and "Success" not in uninstall_result:
+        print(f"Uninstall skipped/failed (likely not previously installed): {uninstall_result.strip()}")
+    else:
+        print(f"Uninstalled {package_name}")
+
+    install_result = device.install(str(apk_path))
+    if install_result is not True and install_result is not None and "Success" not in str(install_result):
+        raise RuntimeError(f"Install failed: {install_result}")
+
+    print(f"Installed {apk_path}")
+
+
+
+
+
+
+
+
+
+
+    # # Configure the tgt_pkg to wait for debugger on start.
+    # cmd = f'am set-debug-app -w {self.tgt_pkg}'
+    # print(cmd)
+    # print(self.device.shell(cmd))
+
+    # # Get the main activity name. (Note: This is a bit wonky.)
+    # cmd = f'cmd package resolve-activity -c android.intent.category.LAUNCHER {self.tgt_pkg}'
+    # print(cmd)
+    # pkg_act_info = self.device.shell(cmd)
+
+    # # import re
+    # # # Get text following "name=" until end of line.
+    # # pattern = re.compile(r'(?<=name=)\S+')
+    # # matches = []
+    # # for line in pkg_act_info.split('\n'):
+    # #     found = pattern.findall(line)
+    # #     matches.extend(found)
+    # # #print(matches)
+        
+    # pkg_main_act = matches[0].replace(self.tgt_pkg, f'{self.tgt_pkg}/')
+    # print(pkg_main_act)
+
+    # # Start the tgt_pkg's main activity.
+    # cmd = f'am start -n {pkg_main_act}'
+    # print(cmd)
+    # self.device.shell(cmd)
+
+    # import time
+    # time.sleep(0.5)
+
+    # # Get the process id (PID) of the running tgt_pkg.
+    # adb_procs = self.device.shell(f'ps -A')
+    # self.proc_pid = None
+    # for proc in adb_procs.split('\n'):
+    #     if proc.find(self.tgt_pkg) < 0:
+    #         continue
+    #     self.proc_pid = int(proc.split()[1])
+    #     break
+    # if not self.proc_pid:
+    #     print("Target process not found.")
+    #     exit(1)
+        
+    # # Port forward internal JDWP port (same as PID) to localhost:8700
+    # cmd = f'adb forward tcp:8700 jdwp:{self.proc_pid}'
+    # print(cmd)
+    # self.device.forward('tcp:8700', f'jdwp:{self.proc_pid}')
+
+    # time.sleep(3)
 
 
 def apkd_runtime_stage_func(args):

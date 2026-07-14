@@ -47,6 +47,13 @@ def init_apkd_config_dir():
                 ],
             },
         },
+        "adb": {
+            "default": {
+                "host": "127.0.0.1",
+                "port": "5037",
+                "device": "emulator-5554",
+            },
+        },
         "binaries": {
             "java": "java",
             "keytool": "keytool",

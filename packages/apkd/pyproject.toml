@@ -13,7 +13,8 @@ dependencies = [
     "pyaxml",
     "androguard",
     "pyyaml",
-    #"protobuf", implicitly part of pyaxml
+    "pure-python-adb-reborn",
+    "protobuf",
 ]
 
 # Requires PEP 621 (setuptools>=61)
