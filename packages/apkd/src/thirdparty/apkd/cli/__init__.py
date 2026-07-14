@@ -231,7 +231,8 @@ def apkd_apk_manifest_func(args):
 
 
 def apkd_apk_resources_func(args):
-    print("apkd_apk_resources_func not implemented")
+    from thirdparty.apkd.apk.resources import get_resources
+    print(get_resources(args.apk_path))
 
 
 def apkd_apk_extract_func(args):

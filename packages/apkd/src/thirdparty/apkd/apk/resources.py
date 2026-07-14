@@ -9,8 +9,17 @@ def get_resources(apk_path, rsc_id=None):
     #     rsc_id_num = convert(rsc_id)
     #     return arsc.get_resource_xml_name(rsc_id_num)
 
-    arsc = APK(apk_path).get_android_resources()
-    return arsc.get_string_resources(arsc.get_packages_names()[0])
+    arsc_data = APK(apk_path).get_file("resources.arsc")
+
+    import pyaxml
+    arsc, _ = pyaxml.ARSC.from_axml(arsc_data)
+
+    from google.protobuf import text_format
+    proto_msg = arsc.proto
+    return text_format.MessageToString(proto_msg)
+
+    #arsc = APK(apk_path).get_android_resources()
+    #return arsc.get_string_resources(arsc.get_packages_names()[0]).decode('utf-8')
 
 
 
@@ -53,6 +62,8 @@ def resources_to_textproto(arsc_path: str, text_path: str) -> None:
         f.write(text_repr)
 
     print(f"Dumped human-readable protobuf text to {text_path}")
+
+
 
 
 def resources_from_textproto(text_path: str, out_arsc_path: str) -> None:
