@@ -88,11 +88,17 @@ def init_apkd_config_dir():
                 },
             },
             "commandlinetools": {
-                "linux": {
+                "linux-x64": {
                     "upstream": "unset",
                     "cache": "commandlinetools-linux-14742923_latest.zip",
                 },
             },
+            "scrcpy": {
+                "linux-x64": {
+                    "upstream": "https://github.com/Genymobile/scrcpy/releases/download/v4.1/scrcpy-linux-x86_64-v4.1.tar.gz",
+                    "cache": "scrcpy-linux-x86_64-v4.1.tar.gz"
+                }
+            }
         },
         "default_keystore": "default",
         "default_keyalias": "default",

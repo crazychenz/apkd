@@ -97,7 +97,7 @@ To efficiently manage all of the states, emulator, adb, and debug all start an a
 
 ## apkd adb
 
-- `apkd [--config <config_yaml>] adb [--device <device>] install <application>`
+- `apkd [--config <config_yaml>] adb [--device <device>] deploy <application>`
   - uninstall apk
   - install apk
 

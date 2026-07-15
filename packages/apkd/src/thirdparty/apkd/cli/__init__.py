@@ -134,6 +134,11 @@ def init_argparse():
     apkd_emu_start_parser.add_argument("name")
     apkd_emu_start_parser.set_defaults(func=apkd_emu_start_func)
 
+    # --- apkd emu gui
+    apkd_emu_gui_parser = apkd_emu_subparsers.add_parser("gui")
+    apkd_emu_gui_parser.add_argument("name")
+    apkd_emu_gui_parser.set_defaults(func=apkd_emu_gui_func)
+
     # --- apkd emu stop
     apkd_emu_stop_parser = apkd_emu_subparsers.add_parser("stop")
     apkd_emu_stop_parser.add_argument("name")
@@ -156,11 +161,6 @@ def init_argparse():
     apkd_runtime_stage_parser = apkd_runtime_subparsers.add_parser("stage")
     apkd_runtime_stage_parser.add_argument("application")
     apkd_runtime_stage_parser.set_defaults(func=apkd_runtime_stage_func)
-
-    # --- apkd runtime listen
-    apkd_runtime_listen_parser = apkd_runtime_subparsers.add_parser("listen")
-    apkd_runtime_listen_parser.add_argument("application")
-    apkd_runtime_listen_parser.set_defaults(func=apkd_runtime_listen_func)
 
     # --- apkd runtime connect
     apkd_runtime_connect_parser = apkd_runtime_subparsers.add_parser("connect")
@@ -209,7 +209,7 @@ def apkd_env_init_func(args):
     from thirdparty.apkd.config.load import load_apkd_config
     config = load_apkd_config()
 
-    from thirdparty.apkd.env.init import extract_openjdk, setup_android_cmdline_tools
+    from thirdparty.apkd.env.init import extract_openjdk, setup_android_cmdline_tools, extract_scrcpy
     from pathlib import Path
 
     # Apply environment. (Ideally already part of external environment.)
@@ -224,8 +224,15 @@ def apkd_env_init_func(args):
     java17_archive_path = downloads_dir / config["downloads"]["java17"]["linux-x64"]["cache"]
     extract_openjdk(java17_archive_path, os.environ["JAVA_HOME"])
 
-    cmdlinetools_archive_path = downloads_dir / config["downloads"]["commandlinetools"]["linux"]["cache"]
-    setup_android_cmdline_tools(cmdlinetools_archive_path, os.environ["ANDROID_HOME"])
+    try:
+        cmdlinetools_archive_path = downloads_dir / config["downloads"]["commandlinetools"]["linux-x64"]["cache"]
+        setup_android_cmdline_tools(cmdlinetools_archive_path, os.environ["ANDROID_HOME"])
+    except Exception as e:
+        print(f'Error during setup_android_cmdline_tools: {e}')
+        pass
+
+    scrcpy_archive_path = downloads_dir / config["downloads"]["scrcpy"]["linux-x64"]["cache"]
+    extract_scrcpy(scrcpy_archive_path, os.environ["ANDROID_HOME"])
 
     import subprocess
     # Install platform tools.
@@ -441,6 +448,8 @@ def apkd_emu_ps_func(args):
     subprocess.run(["avdmanager", "list", "avds"], check=True)
 
 
+# ! TODO: Consider adb root, adb remount
+
 def apkd_emu_start_func(args):
     import tempfile
     import subprocess
@@ -472,6 +481,20 @@ def apkd_emu_start_func(args):
     print(f"Started emulator, pid={proc.pid}, log={log_path}")
     print(f"Can monitor with: tail -f {log_path}")
     #return proc, log_path
+
+
+def apkd_emu_gui_func(args):
+    import subprocess
+
+    proc = subprocess.Popen(
+        ["scrcpy"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,  # equivalent of setsid
+    )
+
+    print(f"Started scrcpy, pid={proc.pid}")
 
 
 def apkd_emu_stop_func(args):
@@ -513,12 +536,11 @@ The adb user precedence:
 
 
 def apkd_runtime_deploy_func(args):
-    # TODO: Programtically uninstall and install the target application (referred to by project folder)
-    print("apkd_runtime_deploy_func not implemented")
 
     # TODO: If we're missing the config, must quit.
     from thirdparty.apkd.config.load import load_apkd_config
     config = load_apkd_config()
+
     adb_host = config["adb"]["default"]["host"]
     adb_port = int(config["adb"]["default"]["port"])
     device_name = config["adb"]["default"]["device"]
@@ -533,7 +555,8 @@ def apkd_runtime_deploy_func(args):
     if device is None:
         raise RuntimeError(f"No device found with serial '{device_serial}'")
 
-    apk_path = Path(args.apk_content_path).resolve() / "working" / "pkg" / "working.apk"
+    from pathlib import Path
+    apk_path = Path(args.application).resolve() / "working" / "pkg" / "working.apk"
 
     # Note: Given the project folder, we'll install the working.apk, but we
     # also need to dynamically pull out the package name with androguard.
@@ -541,7 +564,9 @@ def apkd_runtime_deploy_func(args):
     package_name = APK(str(apk_path)).get_package()
 
     uninstall_result = device.uninstall(package_name)
-    if uninstall_result and "Success" not in uninstall_result:
+    if uninstall_result == False: 
+        print(f"Uninstall skipped/failed (likely not previously installed)")
+    elif uninstall_result and isinstance(uninstall_result, str) and "Success" not in str(uninstall_result):
         print(f"Uninstall skipped/failed (likely not previously installed): {uninstall_result.strip()}")
     else:
         print(f"Uninstalled {package_name}")
@@ -612,18 +637,115 @@ def apkd_runtime_deploy_func(args):
 
 
 def apkd_runtime_stage_func(args):
+    # TODO: Do deploy
+    # TODO: Tag application as "wait for debugger"
+    # TODO: Make the application start but wait for debugger to attach
     print("apkd_runtime_stage_func not implemented")
 
+    # TODO: If we're missing the config, must quit.
+    from thirdparty.apkd.config.load import load_apkd_config
+    config = load_apkd_config()
+    
+    adb_host = config["adb"]["default"]["host"]
+    adb_port = int(config["adb"]["default"]["port"])
+    device_name = config["adb"]["default"]["device"]
 
-def apkd_runtime_listen_func(args):
-    print("apkd_runtime_listen_func not implemented")
+    # Package name of working.apk is the target.
+    from pathlib import Path
+    apk_path = Path(args.application).resolve() / "working" / "pkg" / "working.apk"
+    from androguard.core.apk import APK
+    package_name = APK(str(apk_path)).get_package()
+
+    from ppadb.client import Client as AdbClient
+    client = AdbClient(host=adb_host, port=adb_port)
+
+    # Connection sanity.
+    print(f'ADB Client Version: {client.version()}')
+    device = client.device(device_name)
+    if device is None:
+        raise RuntimeError(f"No device found with serial '{device_serial}'")
+
+    # ===== wait for debugging, start app, and listen to jwdp =====
+
+    # Configure the package_name to wait for debugger on start.
+    cmd = f'am set-debug-app -w {package_name}'
+    print(cmd)
+    print(device.shell(cmd))
+
+    # Get the main activity name. (Note: This is a bit wonky.)
+    # TODO: Make this more versatile
+    cmd = f'cmd package resolve-activity -c android.intent.category.LAUNCHER {package_name}'
+    print(cmd)
+    pkg_act_info = device.shell(cmd)
+
+    import re
+    # Get text following "name=" until end of line.
+    pattern = re.compile(r'(?<=name=)\S+')
+    matches = []
+    for line in pkg_act_info.split('\n'):
+        found = pattern.findall(line)
+        matches.extend(found)
+    #print(matches)
+        
+    pkg_main_act = matches[0].replace(package_name, f'{package_name}/')
+    print(pkg_main_act)
+
+    # Start the package_name's main activity.
+    cmd = f'am start -n {pkg_main_act}'
+    print(cmd)
+    device.shell(cmd)
+
+    import time
+    time.sleep(0.5)
+
+    # --- Assuming the application is waiting ---
+
+    # Get the process id (PID) of the running package_name.
+    adb_procs = device.shell(f'ps -A')
+    proc_pid = None
+    for proc in adb_procs.split('\n'):
+        if proc.find(package_name) < 0:
+            continue
+        proc_pid = int(proc.split()[1])
+        break
+    if not proc_pid:
+        print("Target process not found.")
+        exit(1)
+        
+    # Port forward internal JDWP port (same as PID) to localhost:8700
+    cmd = f'adb forward tcp:8700 jdwp:{proc_pid}'
+    print(cmd)
+    device.forward('tcp:8700', f'jdwp:{proc_pid}')
+
+    import time
+    time.sleep(3)
 
 
 def apkd_runtime_connect_func(args):
+    # TODO: Connect with jwdp debugger process
     print("apkd_runtime_connect_func not implemented")
+
+    """
+        Common options at this point:
+        - `jdb -attach localhost:8700`
+        - `jdb -connect com.sun.jdi.SocketAttach:hostname=localhost,port=8700`
+          - `threads`
+          - `thread 1`
+          - `main[1] print System.loadLibrary("frida-gadget")`
+          - `main[1] cont`
+          - `main[1] quit`
+        - `cat <(echo "suspend") - | jdb -attach localhost:8700`
+        - Use JADX (TODO: Can we start JADX from CLI as connected to debugger session?)
+        - ** Use thirdparty dalvik debugger
+    """
+
 
 
 def apkd_runtime_easy_debug_func(args):
+    apkd_runtime_deploy_func(args)
+    apkd_runtime_stage_func(args)
+    apkd_runtime_connect_func(args)
+    # Todo: connect
     print("apkd_runtime_easy_debug_func not implemented")
 
 

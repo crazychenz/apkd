@@ -15,6 +15,9 @@ dependencies = [
     "pyyaml",
     "pure-python-adb-reborn",
     "protobuf",
+    "frida",
+    "frida-tools",
+    # Consider: "fuzzyfinder"
 ]
 
 # Requires PEP 621 (setuptools>=61)
