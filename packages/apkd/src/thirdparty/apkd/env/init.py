@@ -26,6 +26,24 @@ def extract_openjdk(tar_gz_path: str, java_home: str) -> None:
     )
 
 
+def extract_scrcpy(tar_gz_path, android_home):
+    import subprocess
+    from pathlib import Path
+
+    dest = Path(android_home) / "scrcpy"
+    dest.mkdir(parents=True, exist_ok=True)
+
+    subprocess.run(
+        [
+            "tar",
+            "-xf", tar_gz_path,
+            "-C", str(dest),
+            "--strip-components=1",
+        ],
+        check=True,
+    )
+
+
 def setup_android_cmdline_tools(
     zip_path: str = "~/Downloads/commandlinetools-linux-13114758_latest.zip",
     android_home: str = "~/.android",
@@ -77,20 +95,5 @@ def setup_android_cmdline_tools(
     print(f"cmdline-tools installed at {latest_dir}")
 
 
-def extract_scrcpy(tar_gz_path, android_home):
-    import subprocess
-    from pathlib import Path
 
-    dest = Path(android_home) / "scrcpy"
-    dest.mkdir(parents=True, exist_ok=True)
-
-    subprocess.run(
-        [
-            "tar",
-            "-xf", tar_gz_path,
-            "-C", str(dest),
-            "--strip-components=1",
-        ],
-        check=True,
-    )
 

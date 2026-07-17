@@ -11,7 +11,7 @@ import argcomplete
 def init_argparse():
     # --- apkd
     apkd_parser = argparse.ArgumentParser(prog="apkd")
-    #apkd_parser.add_argument("--config", dest="config", action="store", help="config.yaml")
+    apkd_parser.add_argument("--config", dest="config", action="store", help="path to config.yaml")
     apkd_parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
     apkd_parser.add_argument(
         "--log-level",
@@ -28,21 +28,28 @@ def init_argparse():
 
     # --- apkd config init
     apkd_config_init_parser = apkd_config_subparsers.add_parser("init")
-    # TODO: Allow a config path.
-    #apkd_config_init_parser.add_argument("config_path")
     apkd_config_init_parser.set_defaults(func=apkd_config_init_func)
 
-    # --- apkd env
-    apkd_env_parser = apkd_subparsers.add_parser("env", help="Env management")
-    apkd_env_subparsers = apkd_env_parser.add_subparsers(dest="env_command", required=True)
+    # --- apkd sdk
+    apkd_sdk_parser = apkd_subparsers.add_parser("sdk", help="apkd sdk management")
+    apkd_sdk_subparsers = apkd_sdk_parser.add_subparsers(dest="sdk_command", required=True)
 
-    # --- apkd env init
-    apkd_env_init_parser = apkd_env_subparsers.add_parser("init")
-    apkd_env_init_parser.set_defaults(func=apkd_env_init_func)
+    # --- apkd sdk init [--no-cache]
+    apkd_sdk_init_parser = apkd_sdk_subparsers.add_parser("init")
+    apkd_sdk_init_parser.add_argument("--no-cache", action="store_true")
+    apkd_sdk_init_parser.set_defaults(func=apkd_sdk_init_func)
 
-    # --- apkd env source
-    apkd_env_source_parser = apkd_env_subparsers.add_parser("source")
-    apkd_env_source_parser.set_defaults(func=apkd_env_source_func)
+    # --- apkd sdk env
+    apkd_sdk_env_parser = apkd_sdk_subparsers.add_parser("env")
+    apkd_sdk_env_parser.set_defaults(func=apkd_sdk_env_func)
+
+    # TODO: apkd sdk search
+    # TODO: apkd sdk update
+    # TODO: apkd sdk install
+    # TODO: apkd sdk remove
+    # TODO: apkd sdk show
+
+
 
     # --- apkd apk
     apkd_apk_parser = apkd_subparsers.add_parser("apk", help="Static APK analysis")
@@ -80,6 +87,9 @@ def init_argparse():
 
     # --- apkd apk patch frida
     apkd_apk_patch_frida_parser = apkd_apk_patch_subparsers.add_parser("frida")
+    # TODO: Need to think through the bias here.
+    apkd_apk_patch_frida_parser.add_argument("--skip-gadget", action="store_true", default=False, required=False)
+    apkd_apk_patch_frida_parser.add_argument("--skip-smali-patch", action="store_true", default=False, required=False)
     apkd_apk_patch_frida_parser.add_argument("apk_content_path")
     apkd_apk_patch_frida_parser.set_defaults(func=apkd_apk_patch_frida_func)
 
@@ -95,6 +105,9 @@ def init_argparse():
 
     # --- apkd apk debugify
     apkd_apk_debugify_parser = apkd_apk_subparsers.add_parser("debugify")
+    # TODO: Need to think through the bias here.
+    apkd_apk_debugify_parser.add_argument("--skip-gadget", action="store_true", default=False, required=False)
+    apkd_apk_debugify_parser.add_argument("--skip-smali-patch", action="store_true", default=False, required=False)
     apkd_apk_debugify_parser.add_argument("apk_path")
     apkd_apk_debugify_parser.add_argument("apk_content_path")
     #apkd_apk_debugify_parser.add_argument("new_apk_path")
@@ -154,11 +167,13 @@ def init_argparse():
 
     # --- apkd runtime deploy
     apkd_runtime_deploy_parser = apkd_runtime_subparsers.add_parser("deploy")
+    apkd_runtime_deploy_parser.add_argument("--as-apk", action="store_true", default=False, required=False)
     apkd_runtime_deploy_parser.add_argument("application")
     apkd_runtime_deploy_parser.set_defaults(func=apkd_runtime_deploy_func)
 
     # --- apkd runtime stage
     apkd_runtime_stage_parser = apkd_runtime_subparsers.add_parser("stage")
+    apkd_runtime_stage_parser.add_argument("--as-pkgname", action="store_true", default=False, required=False)
     apkd_runtime_stage_parser.add_argument("application")
     apkd_runtime_stage_parser.set_defaults(func=apkd_runtime_stage_func)
 
@@ -171,6 +186,39 @@ def init_argparse():
     apkd_runtime_easy_debug_parser = apkd_runtime_subparsers.add_parser("easy_debug")
     apkd_runtime_easy_debug_parser.add_argument("application")
     apkd_runtime_easy_debug_parser.set_defaults(func=apkd_runtime_easy_debug_func)
+
+
+
+
+    # apkd dbg [--config config_path] [--force-refresh] [--apk apk_path] \
+    #          [--force-download] [--image system_image] [--avd avd_name] [--with-ui|--with-gui] \
+    #          [--jdwp-port host:device] [--frida-port host:device] \
+    #          [--repl-sock host:port|path] [--exec-sock host:port|path] [--dict-sock host:port|path] \
+    #          [use_case_name] [proj_name]
+
+
+    # --- apkd dbg
+    apkd_dbg_parser = apkd_subparsers.add_parser("dbg", help="debugger")
+    apkd_dbg_parser.add_argument("--config", action="store", default=None, required=False)
+    # TODO: Instead of stopping, consider dry-run?
+    apkd_dbg_parser.add_argument("--show-config", action="store", required=False, help="Show resolved config and stop.")
+    apkd_dbg_parser.add_argument("--force-refresh", action="store_true", default=False, required=False)
+    apkd_dbg_parser.add_argument("--apk", action="store", default=None, required=False)
+    apkd_dbg_parser.add_argument("--force-download", action="store_true", default=False, required=False)
+    apkd_dbg_parser.add_argument("--image", action="store", default=None, required=False)
+    apkd_dbg_parser.add_argument("--avd", action="store", default=None, required=False)
+    apkd_dbg_parser.add_argument("--gui", choices=["scrcpy", "emu"], default="scrcpy", help="scrcpy | emu")
+    apkd_dbg_parser.add_argument("--jdwp-port", action="store", default=None, required=False, help="host:port")
+    apkd_dbg_parser.add_argument("--frida-port", action="store", default=None, required=False, help="host:port")
+    apkd_dbg_parser.add_argument("--repl-sock", action="store", default=None, help="host:port | path")
+    apkd_dbg_parser.add_argument("--exec-sock", action="store", default=None, help="host:port | path")
+    apkd_dbg_parser.add_argument("--dict-sock", action="store", default=None, help="host:port | path")
+    apkd_dbg_parser.add_argument("--base-dir", action="store", default=None)
+    apkd_dbg_parser.add_argument("--proj-dir", action="store", default=None)
+    apkd_dbg_parser.add_argument("--sdk-dir", action="store", default=None)
+    apkd_dbg_parser.add_argument("operation")
+    apkd_dbg_parser.add_argument("proj_name")
+    apkd_dbg_parser.set_defaults(func=apkd_dbg_func)
 
     return apkd_parser
 
@@ -193,57 +241,46 @@ def main():
         module, level_name = spec.split(":")
         logging.getLogger(module).setLevel(getattr(logging, level_name.upper()))
 
-    args.func(args)
+    from thirdparty.apkd.config import load_apkd_config, baseline_empty_config
+    from thirdparty.apkd.sdk.env import apkd_apply_env
+    config = baseline_empty_config()
+    if args.config:
+        config = load_apkd_config(config_path=args.config)
+    apkd_apply_env(config)
+
+    args.func(args, config)
 
 
-def apkd_config_init_func(args):
-    from thirdparty.apkd.config.init import init_apkd_config_dir
-    init_apkd_config_dir()
+def apkd_config_init_func(args, config):
+    # TODO: Consider using given config as baseline?
+    from thirdparty.apkd.config import save_apkd_config
+    save_apkd_config({}, args.config)
 
 
-def apkd_env_init_func(args):
+def apkd_sdk_init_func(args, config):
+    # ** Any CLI arg overrides go here.
+    # TODO: Allow --base-path override
+    # TODO: Allow --sdk-path override
+    # TODO: If both sdk-path and base-path, sdk-path wins.
 
-    import os
+    from thirdparty.apkd.sdk.init import apkd_sdk_init
+    apkd_sdk_init(config=config, no_cache=args.no_cache)
 
-    # TODO: If we're missing the config, must quit.
-    from thirdparty.apkd.config.load import load_apkd_config
-    config = load_apkd_config()
 
-    from thirdparty.apkd.env.init import extract_openjdk, setup_android_cmdline_tools, extract_scrcpy
-    from pathlib import Path
+def apkd_sdk_env_func(args, config):
+    # ** Any CLI arg overrides go here.
+    # TODO: Allow --base-path override
+    # TODO: Allow --sdk-path override
+    # TODO: If both sdk-path and base-path, sdk-path wins.
 
-    # Apply environment. (Ideally already part of external environment.)
-    # TODO: Consider CLI or ENV overrides.
-    apkd_env_source_func(args)
+    from thirdparty.apkd.sdk.env import apkd_print_env
+    apkd_print_env(config=config)
 
-    envs_dir = Path("cache") / "envs"
-    defaultenv_dir = envs_dir / "default"
-    defaultenv_dir.mkdir(parents=True, exist_ok=True)
-    downloads_dir = Path("cache") / "downloads"
 
-    java17_archive_path = downloads_dir / config["downloads"]["java17"]["linux-x64"]["cache"]
-    extract_openjdk(java17_archive_path, os.environ["JAVA_HOME"])
 
-    try:
-        cmdlinetools_archive_path = downloads_dir / config["downloads"]["commandlinetools"]["linux-x64"]["cache"]
-        setup_android_cmdline_tools(cmdlinetools_archive_path, os.environ["ANDROID_HOME"])
-    except Exception as e:
-        print(f'Error during setup_android_cmdline_tools: {e}')
-        pass
-
-    scrcpy_archive_path = downloads_dir / config["downloads"]["scrcpy"]["linux-x64"]["cache"]
-    extract_scrcpy(scrcpy_archive_path, os.environ["ANDROID_HOME"])
-
-    import subprocess
-    # Install platform tools.
-    subprocess.run(
-        'yes | sdkmanager "platform-tools" emulator',
-        shell=True,
-        check=True,
-    )
 
 # (eval "$(apkd env source)" && bash)
-def apkd_env_source_func(args):
+def apkd_env_source_func(args, config):
 
     import os
     from pathlib import Path
@@ -267,22 +304,22 @@ def apkd_env_source_func(args):
         print(f"export {var}={os.environ[var]}")
 
 
-def apkd_apk_ls_func(args):
+def apkd_apk_ls_func(args, config):
     from thirdparty.apkd.apk.ls import list_zip_like_ls
     list_zip_like_ls(args.apk_path)
 
 
-def apkd_apk_manifest_func(args):
+def apkd_apk_manifest_func(args, config):
     from thirdparty.apkd.apk.manifest import get_manifest
     print(get_manifest(args.apk_path))
 
 
-def apkd_apk_resources_func(args):
+def apkd_apk_resources_func(args, config):
     from thirdparty.apkd.apk.resources import get_resources
     print(get_resources(args.apk_path))
 
 
-def apkd_apk_extract_func(args):
+def apkd_apk_extract_func(args, config):
 
     # TODO: If we're missing the config, must quit.
     from thirdparty.apkd.config.load import load_apkd_config
@@ -297,7 +334,7 @@ def apkd_apk_extract_func(args):
     do_pack_process(config, args.apk_content_path)
 
 
-def apkd_apk_patch_debug_func(args):
+def apkd_apk_patch_debug_func(args, config):
     # TODO: Check that everything is already extracted.
     from pathlib import Path
     apkalias_path = Path(args.apk_content_path)
@@ -307,13 +344,13 @@ def apkd_apk_patch_debug_func(args):
     set_debuggable(str(working_manifest_path))
 
 
-def apkd_apk_patch_frida_func(args):
+def apkd_apk_patch_frida_func(args, config):
 
     from thirdparty.apkd.apk.lib import patch_in_frida_gadget
-    patch_in_frida_gadget(args.apk_content_path)
+    patch_in_frida_gadget(args.apk_content_path, not args.skip_gadget, not args.skip_smali_patch)
 
 
-def apkd_apk_pack_func(args):
+def apkd_apk_pack_func(args, config):
 
     # TODO: If we're missing the config, must quit.
     from thirdparty.apkd.config.load import load_apkd_config
@@ -324,7 +361,7 @@ def apkd_apk_pack_func(args):
     do_pack_process(config, args.apk_content_path)
 
 
-def apkd_apk_debugify_func(args):
+def apkd_apk_debugify_func(args, config):
 
     # TODO: If we're missing the config, must quit.
     from thirdparty.apkd.config.load import load_apkd_config
@@ -344,7 +381,7 @@ def apkd_apk_debugify_func(args):
 
 # --- Emulator Management ---
 
-def apkd_emu_list_remote_func(args):
+def apkd_emu_list_remote_func(args, config):
     import subprocess
 
     print("Fetching sdbmanager packages. May take a moment if not recently cached.")
@@ -378,13 +415,13 @@ def apkd_emu_list_remote_func(args):
 
 
 # apkd emu pull "system-images;android-33;default;x86_64"
-def apkd_emu_pull_func(args):
+def apkd_emu_pull_func(args, config):
     import subprocess
     print(f"Pulling {args.spec}")
     result = subprocess.run(['sdkmanager', args.spec], check=True)
 
 
-def apkd_emu_images_func(args):
+def apkd_emu_images_func(args, config):
     import subprocess
     print(f"Installed System Images:")
     result = subprocess.run(
@@ -419,7 +456,7 @@ def apkd_emu_images_func(args):
 # emulator -list-avds
 
 
-def apkd_emu_create_func(args):
+def apkd_emu_create_func(args, config):
     import subprocess
     
     #avdmanager create avd -n android13 -k "system-images;android-33;default;x86_64"
@@ -443,14 +480,14 @@ def apkd_emu_create_func(args):
     )
 
     
-def apkd_emu_ps_func(args):
+def apkd_emu_ps_func(args, config):
     import subprocess
     subprocess.run(["avdmanager", "list", "avds"], check=True)
 
 
 # ! TODO: Consider adb root, adb remount
 
-def apkd_emu_start_func(args):
+def apkd_emu_start_func(args, config):
     import tempfile
     import subprocess
     import os
@@ -483,7 +520,7 @@ def apkd_emu_start_func(args):
     #return proc, log_path
 
 
-def apkd_emu_gui_func(args):
+def apkd_emu_gui_func(args, config):
     import subprocess
 
     proc = subprocess.Popen(
@@ -497,7 +534,7 @@ def apkd_emu_gui_func(args):
     print(f"Started scrcpy, pid={proc.pid}")
 
 
-def apkd_emu_stop_func(args):
+def apkd_emu_stop_func(args, config):
     import subprocess
 
     result = subprocess.run(
@@ -535,7 +572,7 @@ The adb user precedence:
 """
 
 
-def apkd_runtime_deploy_func(args):
+def apkd_runtime_deploy_func(args, config):
 
     # TODO: If we're missing the config, must quit.
     from thirdparty.apkd.config.load import load_apkd_config
@@ -556,7 +593,9 @@ def apkd_runtime_deploy_func(args):
         raise RuntimeError(f"No device found with serial '{device_serial}'")
 
     from pathlib import Path
-    apk_path = Path(args.application).resolve() / "working" / "pkg" / "working.apk"
+    apk_path = Path(args.application).resolve()
+    if not args.as_apk:
+        apk_path = apk_path / "working" / "pkg" / "working.apk"
 
     # Note: Given the project folder, we'll install the working.apk, but we
     # also need to dynamically pull out the package name with androguard.
@@ -636,7 +675,7 @@ def apkd_runtime_deploy_func(args):
     # time.sleep(3)
 
 
-def apkd_runtime_stage_func(args):
+def apkd_runtime_stage_func(args, config):
     # TODO: Do deploy
     # TODO: Tag application as "wait for debugger"
     # TODO: Make the application start but wait for debugger to attach
@@ -652,9 +691,11 @@ def apkd_runtime_stage_func(args):
 
     # Package name of working.apk is the target.
     from pathlib import Path
-    apk_path = Path(args.application).resolve() / "working" / "pkg" / "working.apk"
-    from androguard.core.apk import APK
-    package_name = APK(str(apk_path)).get_package()
+    package_name = args.application
+    if not args.as_pkgname:
+        apk_path = Path(args.application).resolve() / "working" / "pkg" / "working.apk"
+        from androguard.core.apk import APK
+        package_name = APK(str(apk_path)).get_package()
 
     from ppadb.client import Client as AdbClient
     client = AdbClient(host=adb_host, port=adb_port)
@@ -720,8 +761,12 @@ def apkd_runtime_stage_func(args):
     import time
     time.sleep(3)
 
+    # --- Assuming JDWP is now available, we'll use it to start frida ---
 
-def apkd_runtime_connect_func(args):
+
+
+
+def apkd_runtime_connect_func(args, config):
     # TODO: Connect with jwdp debugger process
     print("apkd_runtime_connect_func not implemented")
 
@@ -739,14 +784,196 @@ def apkd_runtime_connect_func(args):
         - ** Use thirdparty dalvik debugger
     """
 
-
-
-def apkd_runtime_easy_debug_func(args):
+def apkd_runtime_easy_debug_func(args, config):
     apkd_runtime_deploy_func(args)
     apkd_runtime_stage_func(args)
     apkd_runtime_connect_func(args)
     # Todo: connect
     print("apkd_runtime_easy_debug_func not implemented")
+
+
+
+
+
+# apkd dbg [--config config_path] [--force-refresh] [--apk apk_path] \
+#          [--force-download] [--image system_image] [--avd avd_name] [--with-ui|--with-gui] \
+#          [--jdwp-port host:device] [--frida-port host:device] \
+#          [--repl-sock host:port|path] [--exec-sock host:port|path] [--dict-sock host:port|path] \
+#          [use_case_name] [proj_name]
+# - proj requires apk or folder
+# - avd requires image or avd
+# - jdwp/frida require proj
+# - use_case_name dependencies vary (implicit arguments in config?)
+#   - debugify
+#   - deploy - requires proj, emu
+#   - stage [--no-debugify] [--no-deploy] - requires proj, emu, jdwp/frida
+
+# python3 -m venv apkd && ./apkd/bin/python -m pip install thirdparty-apkd
+# (eval "$(./apkd/bin/apkd sdk init --source)" && bash)
+# Without config:
+# - apkd dbg --apk `apk` --avd 'android13' --with-ui stage here
+# With config:
+# - apkd dbg stage here
+
+# Panes:
+# - apkd dbg logs here
+# - apkd dbg logcat here
+# - apkd dbg watch here
+# - apkd dbg bytecode here
+# - apkd dbg repl here
+# - apkd dbg disassembly here
+# - apkd dbg registers here
+
+
+
+
+
+def apkd_dbg_func(args, config):
+    from thirdparty.apkd.dbg.lib import xdg_config_home, has_path_delimiter
+
+    # Default config
+    config_dir = xdg_config_home() / "apkd"
+    if args.config:
+        config_dir = Path(args.config)
+
+    # Hard coded base line config, override from disk config, environment, and finally CLI.
+    active = {
+        "force_refresh": False,
+        "apk": None,
+        "force_download": False,
+        "image": None,
+        "avd": None,
+        "gui": "scrcpy",
+        "jdwp_port": None,
+        "frida_port": None,
+        "repl_sock": None,
+        "exec_sock": None,
+        "dict_sock": None,
+        "base_dir": None,
+        "proj_dir": None,
+        "sdk_dir": None,
+        "proj_dir": None,
+        "operation": None,
+        "proj_name": None,
+    }
+
+    if not config_dir.exists():
+        from thirdparty.apkd.config.init import init_apkd_config_dir
+        init_apkd_config_dir(config_dir)
+
+    # TODO: Consider using config_init as hard coded baseline? Maybe not, because of keystore?
+    from thirdparty.apkd.config.load import load_apkd_config
+    config = load_apkd_config(config_dir)
+
+    # ** CLI arguments will override config going forward. **
+
+    if "dbg" not in config:
+        config["dbg"] = {}
+    if "projects" not in config["dbg"]:
+        config["dbg"]["projects"] = {}
+    if args.proj_name is not None and args.proj_name not in config["dbg"]["projects"]:
+        config["dbg"]["projects"][args.proj_name] = {}
+
+    active = config["dbg"]["projects"][args.proj_name]
+
+    # TODO: At this point, consider overriding config["dbg"]["autofill"] with project specific overrides.
+    # TODO: - In this case, we'd use config["dbg"]["autofill"] instead of config["dbg"]["projects"][args.proj_name]
+
+    # TODO: Override any relevant config from environment variables here.
+
+    # CLI overrides here.
+    if args.force_refresh is not None:
+        active["force_refresh"] = args.force_refresh
+    if args.apk is not None:
+        active["apk"] = args.apk
+    if args.force_download is not None:
+        active["force_download"] = args.force_download
+    if args.image is not None:
+        active["image"] = args.image
+    if args.avd is not None:
+        active["avd"] = args.avd
+    if args.gui is not None:
+        active["gui"] = args.gui
+    if args.jdwp_port is not None:
+        active["jdwp_port"] = args.jdwp_port
+    if args.frida_port is not None:
+        active["frida_port"] = args.frida_port
+    if args.repl_sock is not None:
+        active["repl_sock"] = args.repl_sock
+    if args.exec_sock is not None:
+        active["exec_sock"] = args.exec_sock
+    if args.dict_sock is not None:
+        active["dict_sock"] = args.dict_sock
+    if args.base_dir is not None:
+        active["base_dir"] = args.base_dir
+    if args.proj_dir is not None:
+        active["proj_dir"] = args.proj_dir
+    if args.sdk_dir is not None:
+        active["sdk_dir"] = args.sdk_dir
+    if args.proj_dir is not None:
+        active["proj_dir"] = args.base_dir
+
+    active["operation"] = args.operation
+    active["proj_name"] = args.proj_name
+
+    # --- Sanity Checks ---
+    issues = []
+
+    proj_name = active["proj_name"]
+    if has_path_delimiter(proj_name):
+        issues.append("proj_name must not have / or \\. Use --base-dir/--proj-dir to specify path.")
+
+    # Worst case, use local folder.
+    base_dir = Path('.') / "apkd"
+    
+    # Best implicit case, use venv as base prefix.
+    if sys.prefix != sys.base_prefix:
+        # We're in a venv, use it.
+        base_dir = Path(sys.prefix) / "apkd"
+
+    # Allow environment override.
+    base_dir = Path(os.environ.get("APKD_BASE_DIR", base_dir))
+
+    # CLI override always wins.
+    if args.base_dir:
+        base_dir = Path(args.base_dir)
+    base_dir = base_dir.resolve()
+
+    proj_dir = base_dir / "projects" / args.proj_name
+    if args.proj_dir:
+        proj_dir = Path(args.proj_dir).resolve()
+
+    sdk_dir = base_dir / "sdk"
+    if args.sdk_dir:
+        sdk_dir = Path(args.proj_dir).resolve()
+
+
+
+    # Does proj_name already exists?
+    # - Has the user set a base_dir? <base_dir>/apkd/projects/<proj_name>
+    # - No user set base_dir, are we in a venv? base_dir = sys.prefix
+    # - No venv, throw user must set base_dir or be in venv.
+
+    # - Are we in venv and is proj_name in <venv>/apkd/<proj_name>?
+    # - No venv, is there a base_dir override?
+
+
+    # - proj requires apk or folder
+    # - avd requires image or avd
+    # - jdwp/frida require proj
+    # - use_case_name dependencies vary (implicit arguments in config?)
+    #   - debugify
+    #   - deploy - requires proj, emu
+    #   - stage [--no-debugify] [--no-deploy] - requires proj, emu, jdwp/frida
+
+    if len(issues):
+        print("Can not run command with given arguments.\n\nIssues:")
+        for issue in issues:
+            print(f"- {issue}")
+        exit(1)
+
+
+
 
 
 if __name__ == "__main__":

@@ -39,10 +39,11 @@ def do_extraction_process(config, apk_path, apk_content_path):
     androguard_decode_manifest(str(original_manifest_path), str(working_manifest_path))
 
     # Decode resources.
-    original_resources_path = original_apk_path / "resources.arsc"
-    working_resources_path = working_apk_path / "resources.arsc"
-    from thirdparty.apkd.apk.resources import resources_to_textproto
-    resources_to_textproto(str(original_resources_path), str(working_resources_path))
+    # ! Encoding not working, disabling decoding for now.
+    # original_resources_path = original_apk_path / "resources.arsc"
+    # working_resources_path = working_apk_path / "resources.arsc"
+    # from thirdparty.apkd.apk.resources import resources_to_textproto
+    # resources_to_textproto(str(original_resources_path), str(working_resources_path))
 
     # Extract dex with baksmali and remove dex file.
     baksmali_jar = config["jars"]["baksmali"]
@@ -72,10 +73,11 @@ def do_pack_process(config, apk_content_path):
     encode_manifest(str(working_manifest_path), str(build_resources_path))
 
     # Encode resource.arsc
-    build_resources_path = build_apk_path / "resources.arsc"
-    working_resources_path = working_apk_path / "resources.arsc"
-    from thirdparty.apkd.apk.resources import resources_from_textproto
-    resources_from_textproto(str(working_resources_path), str(build_resources_path))
+    # ! Encoding not working, disabling.
+    # build_resources_path = build_apk_path / "resources.arsc"
+    # working_resources_path = working_apk_path / "resources.arsc"
+    # from thirdparty.apkd.apk.resources import resources_from_textproto
+    # resources_from_textproto(str(working_resources_path), str(build_resources_path))
 
     # Reconstruct all dex files
     smali_jar = config["jars"]["smali"]
@@ -101,46 +103,51 @@ def do_pack_process(config, apk_content_path):
     sign_apk(config, str(build_unsigned_apk_path), str(working_pkg_path))
 
 
-def patch_in_frida_gadget(apk_content_path):
+def patch_in_frida_gadget(apk_content_path, inject_gadget = False, patch_smali = False):
 
     from pathlib import Path
     apkalias_path = Path(apk_content_path)
     apkalias_path.resolve()
-    working_manifest_path = apkalias_path / "working" / "apk" / "AndroidManifest.xml"
-    from thirdparty.apkd.apk.patch import find_main_activity
-    main_activity = find_main_activity(working_manifest_path)
 
-    if not main_activity:
-        print("No main activity found.")
-        exit(1)
+    if patch_smali:
+
+        working_manifest_path = apkalias_path / "working" / "apk" / "AndroidManifest.xml"
+        from thirdparty.apkd.apk.patch import find_main_activity
+        main_activity = find_main_activity(working_manifest_path)
+
+        if not main_activity:
+            print("No main activity found.")
+            exit(1)
+        
+        print(f"Found main activity at: {main_activity}")
+
+        from thirdparty.apkd.apk.patch import find_smali_file
+        smali_path = find_smali_file(main_activity, str(apkalias_path / "working" / "dex"))
+
+        if not smali_path:
+            print(f"Could not find smali for {main_activity}")
+            exit(1)
+
+        print(f"Found smali at: {smali_path}")
+
     
-    print(f"Found main activity at: {main_activity}")
+        from thirdparty.apkd.apk.patch import patch_smali_with_gadget
+        patch_smali_with_gadget(smali_path)
+        print(f"Patched {smali_path}")
 
-    from thirdparty.apkd.apk.patch import find_smali_file
-    smali_path = find_smali_file(main_activity, str(apkalias_path / "working" / "dex"))
+    if inject_gadget:
 
-    if not smali_path:
-        print(f"Could not find smali for {main_activity}")
-        exit(1)
+        # TODO: If we're missing the config, must quit.
+        from thirdparty.apkd.config.load import load_apkd_config
+        config = load_apkd_config()
 
-    print(f"Found smali at: {smali_path}")
-
-    from thirdparty.apkd.apk.patch import patch_smali_with_gadget
-    patch_smali_with_gadget(smali_path)
-
-    print(f"Patched {smali_path}")
-
-    # TODO: If we're missing the config, must quit.
-    from thirdparty.apkd.config.load import load_apkd_config
-    config = load_apkd_config()
-
-    # Copy gadgets to native folder
-    import shutil
-    working_lib_path = apkalias_path / "working" / "apk" / "lib"
-    for subdir in [d for d in working_lib_path.iterdir() if d.is_dir()]:
-        gadget_src_path = Path("./cache") / "frida" / config["frida"]["gadget"][subdir.name]
-        if not gadget_src_path.exists():
-            print(f"Skipping gadget install for arch: {subdir.name}")
-            continue
-        gadget_dst_path = str(working_lib_path / subdir.name / "libfrida-gadget.so")
-        shutil.copy2(str(gadget_src_path), gadget_dst_path)
+        # Copy gadgets to native folder
+        import shutil
+        working_lib_path = apkalias_path / "working" / "apk" / "lib"
+        for subdir in [d for d in working_lib_path.iterdir() if d.is_dir()]:
+            gadget_src_path = Path("./cache") / "frida" / config["frida"]["gadget"][subdir.name]
+            if not gadget_src_path.exists():
+                print(f"Skipping gadget install for arch: {subdir.name}")
+                continue
+            gadget_dst_path = str(working_lib_path / subdir.name / "libfrida-gadget.so")
+            shutil.copy2(str(gadget_src_path), gadget_dst_path)
