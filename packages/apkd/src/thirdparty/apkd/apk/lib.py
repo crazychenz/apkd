@@ -1,20 +1,24 @@
 import logging
 log = logging.getLogger(__name__)
 
+import os
+import shutil
+from pathlib import Path
+import thirdparty.apkd.util as apkd_util
 
-def do_extraction_process(config, apk_path, apk_content_path):
-    # TODO: If we're missing the config, must quit.
-    
+
+def do_extraction_process(config, apk_path, proj_name):
+
+    from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
+    base_dir = resolve_base_dir(config)
+    sdk_dir = resolve_sdk_dir(config)
 
     from thirdparty.apkd.apk.extract import create_folder_structure
-    from pathlib import Path
-    apkalias_path = Path(apk_content_path)
-    apkalias_path.resolve()
+    apkalias_path = Path(base_dir / "projects" / proj_name).resolve()
     create_folder_structure(apkalias_path)
 
     # Get our own copy of original apk
     original_sig_path = apkalias_path / ".original" / "pkg" / "original-sig.apk"
-    import shutil
     shutil.copy2(apk_path, str(original_sig_path))
 
     # Re-sign our copy of APK for a bit more consistency.
@@ -24,13 +28,11 @@ def do_extraction_process(config, apk_path, apk_content_path):
 
     # Extract content from original-resigned.apk
     original_apk_path = apkalias_path / ".original" / "apk"
-    from thirdparty.apkd.apk.extract import extract_zip
-    extract_zip(str(original_resigned_path), str(original_apk_path))
+    apkd_util.extract_zip(str(original_resigned_path), str(original_apk_path))
 
     # Extract original to working
     working_apk_path = apkalias_path / "working" / "apk"
-    from thirdparty.apkd.apk.extract import extract_zip
-    extract_zip(str(original_resigned_path), str(working_apk_path))
+    apkd_util.extract_zip(str(original_resigned_path), str(working_apk_path))
 
     # Decode manifest.
     original_manifest_path = original_apk_path / "AndroidManifest.xml"
@@ -46,24 +48,23 @@ def do_extraction_process(config, apk_path, apk_content_path):
     # resources_to_textproto(str(original_resources_path), str(working_resources_path))
 
     # Extract dex with baksmali and remove dex file.
-    baksmali_jar = config["jars"]["baksmali"]
+    baksmali_jar = os.path.expandvars(config["sdk"]["jars"]["baksmali"])
     working_dex_prefix = apkalias_path / "working" / "dex"
     from thirdparty.apkd.apk.dex import dex_disassemble_and_remove
     dex_disassemble_and_remove(str(working_apk_path), baksmali_jar, working_dex_prefix)
 
 
-def do_pack_process(config, apk_content_path):
-    from thirdparty.apkd.config.load import load_apkd_config
-    config = load_apkd_config()
-    
-    from pathlib import Path
-    apkalias_path = Path(apk_content_path)
-    apkalias_path.resolve()
+def do_pack_process(config, proj_name):
+
+    from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
+    base_dir = resolve_base_dir(config)
+    sdk_dir = resolve_sdk_dir(config)
+
+    apkalias_path = Path(base_dir / "projects" / proj_name).resolve()
     working_apk_path = apkalias_path / "working" / "apk"
 
     # Initially copy working/apk to .build/apk
     build_apk_path = apkalias_path / ".build" / "apk"
-    import shutil
     shutil.copytree(str(working_apk_path), str(build_apk_path), symlinks=True, dirs_exist_ok=True)
 
     # Encode AndroidManifest.xml
@@ -80,7 +81,7 @@ def do_pack_process(config, apk_content_path):
     # resources_from_textproto(str(working_resources_path), str(build_resources_path))
 
     # Reconstruct all dex files
-    smali_jar = config["jars"]["smali"]
+    smali_jar = os.path.expandvars(config["sdk"]["jars"]["smali"])
     working_dex_prefix = apkalias_path / "working" / "dex"
     from thirdparty.apkd.apk.dex import dex_reassemble_all
     dex_reassemble_all(working_dex_prefix, smali_jar, build_apk_path)
@@ -93,7 +94,7 @@ def do_pack_process(config, apk_content_path):
 
     # Build unsigned (i.e. aligned) apk
     from thirdparty.apkd.apk.pack import apply_source_alignment
-    zipalign_path = config["binaries"]["zipalign"]
+    zipalign_path = config["sdk"]["commands"]["zipalign"]
     original_resigned_path = apkalias_path / ".original" / "pkg" / "original-resigned.apk"
     apply_source_alignment(str(original_resigned_path), str(build_unaligned_apk_path), str(build_unsigned_apk_path), zipalign_path=zipalign_path)
 
@@ -103,51 +104,3 @@ def do_pack_process(config, apk_content_path):
     sign_apk(config, str(build_unsigned_apk_path), str(working_pkg_path))
 
 
-def patch_in_frida_gadget(apk_content_path, inject_gadget = False, patch_smali = False):
-
-    from pathlib import Path
-    apkalias_path = Path(apk_content_path)
-    apkalias_path.resolve()
-
-    if patch_smali:
-
-        working_manifest_path = apkalias_path / "working" / "apk" / "AndroidManifest.xml"
-        from thirdparty.apkd.apk.patch import find_main_activity
-        main_activity = find_main_activity(working_manifest_path)
-
-        if not main_activity:
-            print("No main activity found.")
-            exit(1)
-        
-        print(f"Found main activity at: {main_activity}")
-
-        from thirdparty.apkd.apk.patch import find_smali_file
-        smali_path = find_smali_file(main_activity, str(apkalias_path / "working" / "dex"))
-
-        if not smali_path:
-            print(f"Could not find smali for {main_activity}")
-            exit(1)
-
-        print(f"Found smali at: {smali_path}")
-
-    
-        from thirdparty.apkd.apk.patch import patch_smali_with_gadget
-        patch_smali_with_gadget(smali_path)
-        print(f"Patched {smali_path}")
-
-    if inject_gadget:
-
-        # TODO: If we're missing the config, must quit.
-        from thirdparty.apkd.config.load import load_apkd_config
-        config = load_apkd_config()
-
-        # Copy gadgets to native folder
-        import shutil
-        working_lib_path = apkalias_path / "working" / "apk" / "lib"
-        for subdir in [d for d in working_lib_path.iterdir() if d.is_dir()]:
-            gadget_src_path = Path("./cache") / "frida" / config["frida"]["gadget"][subdir.name]
-            if not gadget_src_path.exists():
-                print(f"Skipping gadget install for arch: {subdir.name}")
-                continue
-            gadget_dst_path = str(working_lib_path / subdir.name / "libfrida-gadget.so")
-            shutil.copy2(str(gadget_src_path), gadget_dst_path)

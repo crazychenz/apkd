@@ -24,8 +24,6 @@ def baseline_empty_config():
                 "keytool": "keytool",
                 # APKD_ZIPALIGN
                 "zipalign": "zipalign",
-                # APKD_APKSIGNER
-                "apksigner": "apksigner",
                 # APKD_SDKMANAGER
                 "sdkmanager": "sdkmanager",
                 # APKD_EMULATOR
@@ -34,13 +32,13 @@ def baseline_empty_config():
             },
             "jars": {
                 # APKD_APKSIGNER_JAR
-                "apksigner": "apksigner.jar",
+                "apksigner": "${ANDROID_HOME}/build-tools/33.0.3/lib/apksigner.jar",
                 # APKD_BAKSMALI_JAR
-                "baksmali": "baksmali.jar",
+                "baksmali": "${APKD_BASE_PATH}/downloads/baksmali-3.0.9-fat.jar",
                 # APKD_SMALI_JAR
-                "smali": "smali.jar",
+                "smali": "${APKD_BASE_PATH}/downloads/smali-3.0.9-fat.jar",
                 # APKD_APKTOOL_JAR
-                "apktool": "apktool.jar",
+                "apktool": "${APKD_BASE_PATH}/downloads/apktool_3.0.2.jar",
             },
         },
         "downloads": {
@@ -82,6 +80,7 @@ def baseline_empty_config():
             },
             "sdkmanager": [
                 "platform-tools",
+                "build-tools/33.0.3",
                 "emulator",
                 "system-images;android-33;default;x86_64",
             ],
@@ -192,6 +191,7 @@ def baseline_empty_config():
     }
 
 
+# TODO: Create "apkd keystore" sub-command.
 def create_keystore(
     ks_prefix: str,
     keystore_password: str,

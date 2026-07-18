@@ -1,25 +1,45 @@
 import logging
 log = logging.getLogger(__name__)
 
+import os
+import subprocess
+from pathlib import Path
+
 
 def sign_apk(config, src_apk, dst_apk):
-    from pathlib import Path
-    import os
-    import subprocess
+    
+    # TODO: Put in config.py
+    def get_kspass(keystores, ks_name):
+        try:
+            return keystores[ks_name]["kspass"]
+        except KeyError:
+            return None
+    
+    # TODO: Put in config.py
+    def get_keypass(keystores, ks_name, key_alias):
+        try:
+            return keystores[ks_name]["keys"][key_alias]["keypass"]
+        except KeyError:
+            return None
 
-    config_dir = Path(os.environ["HOME"]) / ".config" / "apkd"
+    from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
+    base_dir = resolve_base_dir(config)
+    sdk_dir = resolve_sdk_dir(config)
 
-    apksigner_path = config["jars"]["apksigner"]
-    java_path = config["binaries"]["java"]
+    ks_name = config["apk"]["sign"]["default_keystore"]
+    ks_prefix = base_dir / "keystores"
+    key_alias = config["apk"]["sign"]["default_keyalias"]
+    keystores = config["apk"]["sign"]["keystores"]
+    ks_pass = os.environ.get("APKD_KSPASS", get_kspass(keystores, ks_name))
+    key_pass = os.environ.get("APKD_KEYPASS", get_keypass(keystores, ks_name, key_alias))
+    dname = keystores[ks_name]["keys"][key_alias]["dn"]
 
-    ks_name = config["default_keystore"]
-    ks_prefix = config_dir / "keystores"
-    ks_config = config["keystores"][ks_name]
-    key_alias = config["default_keyalias"]
-    key_config = ks_config["keys"][key_alias]
-    ks_pass = ks_config["kspass"]
-    key_pass = key_config["keypass"]
-    dname = key_config["dn"]
+    # Ensure the keystore is created.
+    from thirdparty.apkd.config import create_keystore
+    create_keystore(str(ks_prefix), ks_pass, key_pass, keystore_name=ks_name, key_alias=key_alias, dname=dname)
+
+    apksigner_path = os.path.expandvars(config["sdk"]["jars"]["apksigner"])
+    java_path = os.path.expandvars(config["sdk"]["commands"]["java"])
 
     cmd = [
         java_path, '-jar', apksigner_path, 'sign',

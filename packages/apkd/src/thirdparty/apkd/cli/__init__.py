@@ -73,7 +73,7 @@ def init_argparse():
     # --- apkd apk extract
     apkd_apk_extract_parser = apkd_apk_subparsers.add_parser("extract")
     apkd_apk_extract_parser.add_argument("apk_path")
-    apkd_apk_extract_parser.add_argument("apk_content_path")
+    apkd_apk_extract_parser.add_argument("proj_name")
     apkd_apk_extract_parser.set_defaults(func=apkd_apk_extract_func)
 
     # --- apkd apk patch
@@ -82,7 +82,7 @@ def init_argparse():
 
     # --- apkd apk patch debug
     apkd_apk_patch_debug_parser = apkd_apk_patch_subparsers.add_parser("debug")
-    apkd_apk_patch_debug_parser.add_argument("apk_content_path")
+    apkd_apk_patch_debug_parser.add_argument("proj_name")
     apkd_apk_patch_debug_parser.set_defaults(func=apkd_apk_patch_debug_func)
 
     # --- apkd apk patch frida
@@ -90,7 +90,7 @@ def init_argparse():
     # TODO: Need to think through the bias here.
     apkd_apk_patch_frida_parser.add_argument("--skip-gadget", action="store_true", default=False, required=False)
     apkd_apk_patch_frida_parser.add_argument("--skip-smali-patch", action="store_true", default=False, required=False)
-    apkd_apk_patch_frida_parser.add_argument("apk_content_path")
+    apkd_apk_patch_frida_parser.add_argument("proj_name")
     apkd_apk_patch_frida_parser.set_defaults(func=apkd_apk_patch_frida_func)
 
     # --- apkd apk pack
@@ -99,7 +99,7 @@ def init_argparse():
     # apkd_apk_pack_parser.add_argument('--kspass', dest="kspass")
     # apkd_apk_pack_parser.add_argument('--key', dest="keyname")
     # apkd_apk_pack_parser.add_argument('--keypass', dest="keypass")
-    apkd_apk_pack_parser.add_argument("apk_content_path")
+    apkd_apk_pack_parser.add_argument("proj_name")
     #apkd_apk_pack_parser.add_argument("new_apk_path")
     apkd_apk_pack_parser.set_defaults(func=apkd_apk_pack_func)
 
@@ -109,9 +109,12 @@ def init_argparse():
     apkd_apk_debugify_parser.add_argument("--skip-gadget", action="store_true", default=False, required=False)
     apkd_apk_debugify_parser.add_argument("--skip-smali-patch", action="store_true", default=False, required=False)
     apkd_apk_debugify_parser.add_argument("apk_path")
-    apkd_apk_debugify_parser.add_argument("apk_content_path")
+    apkd_apk_debugify_parser.add_argument("proj_name")
     #apkd_apk_debugify_parser.add_argument("new_apk_path")
     apkd_apk_debugify_parser.set_defaults(func=apkd_apk_debugify_func)
+
+
+
 
     # --- apkd emu
     apkd_emu_parser = apkd_subparsers.add_parser("emu", help="Android emulator management")
@@ -277,33 +280,6 @@ def apkd_sdk_env_func(args, config):
     apkd_print_env(config=config)
 
 
-
-
-# (eval "$(apkd env source)" && bash)
-def apkd_env_source_func(args, config):
-
-    import os
-    from pathlib import Path
-
-    # TODO: If we're missing the config, must quit.
-    from thirdparty.apkd.config.load import load_apkd_config
-    config = load_apkd_config()
-
-    for var, vals in config["envs"]["default"].items():
-        if isinstance(vals, list):
-            result = []
-            if len(os.environ[var]):
-                result.append(os.environ[var])
-            for val in vals:
-                p = Path(os.path.expandvars(val)).resolve()
-                result.append(str(p))
-            os.environ[var] = ':'.join(result)
-        else:
-            p = Path(os.path.expandvars(vals)).resolve()
-            os.environ[var] = str(p)
-        print(f"export {var}={os.environ[var]}")
-
-
 def apkd_apk_ls_func(args, config):
     from thirdparty.apkd.apk.ls import list_zip_like_ls
     list_zip_like_ls(args.apk_path)
@@ -320,63 +296,45 @@ def apkd_apk_resources_func(args, config):
 
 
 def apkd_apk_extract_func(args, config):
-
-    # TODO: If we're missing the config, must quit.
-    from thirdparty.apkd.config.load import load_apkd_config
-    config = load_apkd_config()
-
     # Extract everything.
     from thirdparty.apkd.apk.lib import do_extraction_process
-    do_extraction_process(config, args.apk_path, args.apk_content_path)
+    do_extraction_process(config, args.apk_path, args.proj_name)
 
     # Rebuild everything.
     from thirdparty.apkd.apk.lib import do_pack_process
-    do_pack_process(config, args.apk_content_path)
+    do_pack_process(config, args.proj_name)
 
 
 def apkd_apk_patch_debug_func(args, config):
-    # TODO: Check that everything is already extracted.
-    from pathlib import Path
-    apkalias_path = Path(args.apk_content_path)
-    apkalias_path.resolve()
-    working_manifest_path = apkalias_path / "working" / "apk" / "AndroidManifest.xml"
-    from thirdparty.apkd.apk.patch import set_debuggable
-    set_debuggable(str(working_manifest_path))
+    from thirdparty.apkd.apk.patch import apkd_apk_patch_debuggable_manifest
+    apkd_apk_patch_debuggable_manifest(config, args.proj_name)
 
 
 def apkd_apk_patch_frida_func(args, config):
-
-    from thirdparty.apkd.apk.lib import patch_in_frida_gadget
-    patch_in_frida_gadget(args.apk_content_path, not args.skip_gadget, not args.skip_smali_patch)
+    from thirdparty.apkd.apk.patch import patch_in_frida_gadget
+    patch_in_frida_gadget(config, args.proj_name, not args.skip_gadget, not args.skip_smali_patch)
 
 
 def apkd_apk_pack_func(args, config):
-
-    # TODO: If we're missing the config, must quit.
-    from thirdparty.apkd.config.load import load_apkd_config
-    config = load_apkd_config()
-
     # Rebuild everything.
     from thirdparty.apkd.apk.lib import do_pack_process
-    do_pack_process(config, args.apk_content_path)
+    do_pack_process(config, args.proj_name)
 
 
 def apkd_apk_debugify_func(args, config):
-
-    # TODO: If we're missing the config, must quit.
-    from thirdparty.apkd.config.load import load_apkd_config
-    config = load_apkd_config()
-
     # Extract everything.
     from thirdparty.apkd.apk.lib import do_extraction_process
-    do_extraction_process(config, args.apk_path, args.apk_content_path)
+    do_extraction_process(config, args.apk_path, args.proj_name)
 
-    apkd_apk_patch_debug_func(args)
-    apkd_apk_patch_frida_func(args)
+    from thirdparty.apkd.apk.patch import apkd_apk_patch_debuggable_manifest
+    apkd_apk_patch_debuggable_manifest(config, args.proj_name)
+    
+    from thirdparty.apkd.apk.patch import patch_in_frida_gadget
+    patch_in_frida_gadget(config, args.proj_name, not args.skip_gadget, not args.skip_smali_patch)
 
     # Rebuild everything.
     from thirdparty.apkd.apk.lib import do_pack_process
-    do_pack_process(config, args.apk_content_path)
+    do_pack_process(config, args.proj_name)
 
 
 # --- Emulator Management ---
