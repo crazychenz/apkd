@@ -419,38 +419,8 @@ def apkd_emu_ps_func(args, config):
 # ! TODO: Consider adb root, adb remount
 
 def apkd_emu_start_func(args, config):
-    import tempfile
-    import subprocess
-    import os
-
-    cmd = [
-        'emulator',
-        '-avd',
-        args.name,
-        '-no-snapshot',
-        '-writable-system',
-        '-show-kernel',
-        '-verbose',
-        '-no-audio',
-        '-no-window',
-    ]
-
-    #fd, log_path = tempfile.mkstemp(prefix="apkd_emu_", suffix=".log")
-    #log_file = os.fdopen(fd, "w")
-    from thirdparty.apkd.emu.logs import build_log_path
-    log_path = build_log_path(config, args.name).resolve()
-    log_file = open(str(log_path), "w")
-
-    proc = subprocess.Popen(
-        cmd,
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
-        stdin=subprocess.DEVNULL,
-        start_new_session=True,
-    )
-
-    print(f"Started emulator, pid={proc.pid}, log={log_path}")
-    print(f"Can monitor with: apkd emu logs {args.name}")
+    from thirdparty.apkd.emu.control import apkd_emu_start
+    apkd_emu_start(config, args.name)
 
 
 def apkd_emu_logs_func(args, config):
@@ -468,23 +438,8 @@ def apkd_emu_logs_func(args, config):
 
 
 def apkd_emu_gui_func(args, config):
-    import subprocess
-
-    from thirdparty.apkd.emu.inspect import running_avd_names
-    running = running_avd_names()
-
-    if args.name not in running:
-        print(f"No avd {args.name} detected as running.")
-
-    proc = subprocess.Popen(
-        ["scrcpy", "-s", running[args.name]],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        stdin=subprocess.DEVNULL,
-        start_new_session=True,
-    )
-
-    print(f"Started scrcpy, pid={proc.pid}")
+    from thirdparty.apkd.emu.control import apkd_emu_scrcpy
+    apkd_emu_scrcpy(config, args.name)
 
 
 def apkd_emu_stop_func(args, config):
@@ -525,49 +480,7 @@ The adb user precedence:
 """
 
 
-# def apkd_runtime_deploy_func(args, config):
 
-#     # TODO: If we're missing the config, must quit.
-#     from thirdparty.apkd.config.load import load_apkd_config
-#     config = load_apkd_config()
-
-#     adb_host = config["adb"]["default"]["host"]
-#     adb_port = int(config["adb"]["default"]["port"])
-#     device_name = config["adb"]["default"]["device"]
-#     # tgt_pkg = ??
-
-#     from ppadb.client import Client as AdbClient
-#     client = AdbClient(host=adb_host, port=adb_port)
-
-#     # Connection sanity.
-#     print(f'ADB Client Version: {client.version()}')
-#     device = client.device(device_name)
-#     if device is None:
-#         raise RuntimeError(f"No device found with serial '{device_serial}'")
-
-#     from pathlib import Path
-#     apk_path = Path(args.application).resolve()
-#     if not args.as_apk:
-#         apk_path = apk_path / "working" / "pkg" / "working.apk"
-
-#     # Note: Given the project folder, we'll install the working.apk, but we
-#     # also need to dynamically pull out the package name with androguard.
-#     from androguard.core.apk import APK
-#     package_name = APK(str(apk_path)).get_package()
-
-#     uninstall_result = device.uninstall(package_name)
-#     if uninstall_result == False: 
-#         print(f"Uninstall skipped/failed (likely not previously installed)")
-#     elif uninstall_result and isinstance(uninstall_result, str) and "Success" not in str(uninstall_result):
-#         print(f"Uninstall skipped/failed (likely not previously installed): {uninstall_result.strip()}")
-#     else:
-#         print(f"Uninstalled {package_name}")
-
-#     install_result = device.install(str(apk_path))
-#     if install_result is not True and install_result is not None and "Success" not in str(install_result):
-#         raise RuntimeError(f"Install failed: {install_result}")
-
-#     print(f"Installed {apk_path}")
 
 
 
@@ -782,7 +695,6 @@ def apkd_runtime_easy_debug_func(args, config):
 
 
 def apkd_dbg_func(args, config):
-    from thirdparty.apkd.dbg.lib import xdg_config_home, has_path_delimiter
 
     # Hard coded base line config, override from disk config, environment, and finally CLI.
     active = {
@@ -806,19 +718,19 @@ def apkd_dbg_func(args, config):
         "proj_name": args.proj_name,
     }
 
-    if has_path_delimiter(args.proj_name):
+    if apkd_util.has_path_delimiter(args.proj_name):
         print("proj_name must not have / or \\. Use --base-dir/--proj-dir to specify path.")
         exit(1)
 
     # ** CLI arguments will override config going forward. **
 
-    if "dbg" not in config or "defaults" not in config["dbg"] or "projects" not in config["dbg"]:
-        print("Invalid config, please reinitialize with 'apkd config init'.")
-    if args.proj_name not in config["dbg"]["projects"]:
-        config["dbg"]["projects"][args.proj_name] = {}
+    # if "dbg" not in config or "defaults" not in config["dbg"] or "projects" not in config["dbg"]:
+    #     print("Invalid config, please reinitialize with 'apkd config init'.")
+    if args.proj_name not in config["projects"]:
+        config["projects"][args.proj_name] = {"dbg": {}}
 
     active = {**active, **config["dbg"]["defaults"]}
-    active = {**active, **config["dbg"]["projects"][args.proj_name]}
+    active = {**active, **config["projects"][args.proj_name]["dbg"]}
 
     # TODO: Override any relevant config from environment variables here.
 
@@ -861,7 +773,6 @@ def apkd_dbg_func(args, config):
     base_dir = resolve_base_dir(config)
     sdk_dir = resolve_sdk_dir(config)
 
-    # TODO: How is this used?
     proj_dir = base_dir / "projects" / active["proj_name"]
     if active["proj_dir"]:
         proj_dir = Path(active["proj_dir"]).resolve()
@@ -872,11 +783,11 @@ def apkd_dbg_func(args, config):
 
     # TODO: If avd provided, check if its already created or if there is an image specified
 
-    if len(issues):
-        print("Can not run command with given arguments.\n\nIssues:")
-        for issue in issues:
-            print(f"- {issue}")
-        exit(1)
+    # if len(issues):
+    #     print("Can not run command with given arguments.\n\nIssues:")
+    #     for issue in issues:
+    #         print(f"- {issue}")
+    #     exit(1)
 
     # - avd requires image or avd
     # - jdwp/frida require proj
@@ -888,15 +799,119 @@ def apkd_dbg_func(args, config):
 
     # ========= Start to do the things based on operation =========
 
+    # Whether or not to re-extracted is a bit nuanced. The simple case is we have and 
+    # apk but we have no proj_dir -> extract. If we've already extracted (there is a
+    # proj_dir), we don't want to auto-extract unless instructed because we don't want
+    # to clobber working/. If we get --apk argument, that is equivalent to saying
+    # re-extract. If we get --force-refresh (without --apk), that is also equivalent to
+    # saying re-extract (perhaps even with a rmtree to completely clear things out.)
+    # Having active["apk"] not None does not implicitly mean extract.
 
     if active["operation"] in ['debugify', 'deploy', 'stage']:
-        if not proj_dir.exists():
+        if active["apk"] is None and not proj_dir.exists():
+            print("No project folder and no apk to extract.")
+            exit(1)
+
+        if active["apk"] and args.apk or not proj_dir.exists() or args.force_refresh:
             # No project, do we have an apk?
-            apkd_apk.do_extraction_process(config, args.apk_path, args.proj_name)
+            apkd_apk.do_extraction_process(config, args.apk, args.proj_name)
             apkd_apk.apkd_apk_patch_debuggable_manifest(config, args.proj_name)
-            apkd_apk.patch_in_frida_gadget(config, args.proj_name, not args.skip_gadget, not args.skip_smali_patch)
+            apkd_apk.patch_in_frida_gadget(config, args.proj_name, True, False) #not args.skip_gadget, not args.skip_smali_patch)
             apkd_apk.do_pack_process(config, args.proj_name)
 
+    # TODO: image / avd / gui
+    """
+        image is the system-image specification
+        avd is the name of the vm
+        if we're given an image, verify the avd matches the image (mismatch throws error)
+        if we're given an image and the avd does not exist, create it.
+        if we have an avd (with a matching image), start it (if not already running)
+    """
+
+    # Get all avds
+    import subprocess
+    from thirdparty.apkd.emu.control import apkd_emu_start
+    result = subprocess.run(["emulator", "-list-avds"], capture_output=True, text=True, check=True)
+    avd_names = [avd_name for avd_name in result.stdout.splitlines() if avd_name.strip()]
+    from thirdparty.apkd.emu.inspect import running_avd_names
+    running = running_avd_names()
+    from thirdparty.apkd.emu.inspect import parse_installed_system_images
+    avail_images_list = parse_installed_system_images("system-images*")
+    avail_images = [img["path"] for img in avail_images_list]
+
+    # TODO: Untangle this mess.
+    if active["image"] is not None:
+        if active["avd"] is not None:
+            if active["avd"] in avd_names:
+                # If avd exists and does not match image, die.
+                import json
+                from thirdparty.apkd.emu.inspect import get_system_image_for_avd
+                info = get_system_image_for_avd(active["avd"])
+                """
+                    {
+                        "raw_sysdir": "system-images/android-33/default/x86_64/",
+                        "package_id_slash": "system-images/android-33/default/x86_64",
+                        "package_id_semicolon": "system-images;android-33;default;x86_64",
+                        "api_level": "android-33",
+                        "tag": "default",
+                        "abi": "x86_64",
+                        "target": "android-33",
+                        "abi_type": "x86_64",
+                        "tag_id": "default"
+                    }
+                """
+                if active["image"] != info["package_id_slash"]:
+                    print(f"Existing avd {active["avd"]} using image: {info["package_id_slash"]}")
+                    print(f"  User requested mismatch: {active["image"]}")
+                    print(f"  Remove the avd to recreate with new image.")
+                    exit(1)
+                else:
+                    # avd exist and matches image, start if not running
+                    if active["avd"] not in running:
+                        if active["image"] not in avail_images:
+                            subprocess.run(['android', 'sdk', 'install', active["image"]], check=True)
+                        apkd_emu_start(config, active["avd"])
+            else:
+                # If avd does not exist, create it.
+                cmd = ["avdmanager", "create", "avd", "--name", active["avd"], "--package", active["image"]]
+                subprocess.run(cmd, input="no\n", text=True, check=True)
+                if active["image"] not in avail_images:
+                    subprocess.run(['android', 'sdk', 'install', active["image"]], check=True)
+                apkd_emu_start(config, active["avd"])
+    else:
+        if active["avd"] is not None:
+            if active["avd"] not in avd_names:
+                print("avd does not exist and no image specified.")
+                exit(1)
+
+            if active["avd"] not in running:
+                print(f"starting avd {active['avd']}.")
+                apkd_emu_start(config, active["avd"])
+
+        else:
+            print("no avd set, nothing left to do.")
+            exit(0)
+    
+    # --------- At this point we should have a running emu or exit ---------
+
+    if active["gui"] == "scrcpy":
+        from thirdparty.apkd.emu.control import apkd_emu_scrcpy
+        apkd_emu_scrcpy(config, active["avd"])
+    else:
+        print(f"Unsupported gui option: {active['gui']}")
+        exit(1)
+    
+
+    if active["operation"] in ['deploy', 'stage']:
+        # TODO: Requires APK
+        # Do deploy
+        from thirdparty.apkd.dbg.deploy import apkd_dbg_deploy
+        apkd_dbg_deploy(config, active, proj_dir)
+        
+
+    if active["operation"] in ['stage']:
+        # Do stage
+        pass
 
 if __name__ == "__main__":
     main()

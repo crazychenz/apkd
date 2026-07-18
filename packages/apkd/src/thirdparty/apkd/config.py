@@ -41,6 +41,12 @@ def baseline_empty_config():
                 "apktool": "${APKD_BASE_PATH}/downloads/apktool_3.0.2.jar",
             },
         },
+        "adb": {
+            "default": {
+                "host": "127.0.0.1",
+                "port": "5037",
+            },
+        },
         "downloads": {
             "android-sdk-clitools": {
                 "linux": {
@@ -277,7 +283,7 @@ def load_apkd_config(config:dict={}, config_path=None):
     commands["java"] = os.environ.get("APKD_JAVA", commands["java"])
     commands["keytool"] = os.environ.get("APKD_KEYTOOL", commands["keytool"])
     commands["zipalign"] = os.environ.get("APKD_ZIPALIGN", commands["zipalign"])
-    commands["apksigner"] = os.environ.get("APKD_APKSIGNER", commands["apksigner"])
+    #commands["apksigner"] = os.environ.get("APKD_APKSIGNER", commands["apksigner"])
     commands["sdkmanager"] = os.environ.get("APKD_SDKMANAGER", commands["sdkmanager"])
     commands["emulator"] = os.environ.get("APKD_EMULATOR", commands["emulator"])
 
