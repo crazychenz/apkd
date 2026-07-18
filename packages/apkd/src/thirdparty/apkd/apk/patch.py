@@ -331,13 +331,16 @@ def patch_in_frida_gadget(config, proj_name, inject_gadget = False, patch_smali 
 
         # Copy gadgets to native folder
         working_lib_path = apkalias_path / "working" / "apk" / "lib"
-        for subdir in [d for d in working_lib_path.iterdir() if d.is_dir()]:
-            gadget_src_path = base_dir / "downloads" / config["downloads"]["frida"]["gadget"][subdir.name]["filename"]
+        working_lib_path.mkdir(parents=True, exist_ok=True)
+        #for subdir in [d for d in working_lib_path.iterdir() if d.is_dir()]:
+        for subdir in config["downloads"]["frida"]["gadget"]:
+            gadget_src_path = base_dir / "downloads" / config["downloads"]["frida"]["gadget"][subdir]["filename"]
             if not gadget_src_path.exists():
-                print(f"Gadget {gadget_src_path.name} not found, skipping for arch: {subdir.name}")
+                print(f"Gadget {gadget_src_path.name} not found, skipping for arch: {subdir}")
                 continue
-            gadget_dst_path = str(working_lib_path / subdir.name / "libfrida-gadget.so")
-            shutil.copy2(str(gadget_src_path), gadget_dst_path)
+            gadget_dst_path = working_lib_path / subdir / "libfrida-gadget.so"
+            gadget_dst_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(gadget_src_path), str(gadget_dst_path))
 
 
 

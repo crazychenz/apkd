@@ -62,8 +62,12 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
+    // Pinned below the versions that require compileSdk 34+ (appcompat
+    // 1.7.0 pulls in activity 1.8.0, and material 1.10.0+ / core-ktx 1.12.0+
+    // both raise the compileSdk floor to 34). These versions are the last
+    // known-good ones against compileSdk 33.
+    implementation("androidx.core:core-ktx:1.10.1")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
