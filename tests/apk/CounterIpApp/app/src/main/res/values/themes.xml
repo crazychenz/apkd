@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.CounterIpApp" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
+</resources>

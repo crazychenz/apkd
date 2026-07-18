@@ -7,6 +7,8 @@ import argparse
 import sys
 import argcomplete
 
+import thirdparty.apkd.apk as apkd_apk
+
 
 def init_argparse():
     # --- apkd
@@ -281,60 +283,48 @@ def apkd_sdk_env_func(args, config):
 
 
 def apkd_apk_ls_func(args, config):
-    from thirdparty.apkd.apk.ls import list_zip_like_ls
-    list_zip_like_ls(args.apk_path)
+    apkd_apk.list_zip_like_ls(args.apk_path)
 
 
 def apkd_apk_manifest_func(args, config):
-    from thirdparty.apkd.apk.manifest import get_manifest
-    print(get_manifest(args.apk_path))
+    print(apkd_apk.get_manifest(args.apk_path))
 
 
 def apkd_apk_resources_func(args, config):
-    from thirdparty.apkd.apk.resources import get_resources
-    print(get_resources(args.apk_path))
+    print(apkd_apk.get_resources(args.apk_path))
 
 
 def apkd_apk_extract_func(args, config):
     # Extract everything.
-    from thirdparty.apkd.apk.lib import do_extraction_process
-    do_extraction_process(config, args.apk_path, args.proj_name)
+    apkd_apk.do_extraction_process(config, args.apk_path, args.proj_name)
 
     # Rebuild everything.
-    from thirdparty.apkd.apk.lib import do_pack_process
-    do_pack_process(config, args.proj_name)
+    apkd_apk.do_pack_process(config, args.proj_name)
 
 
 def apkd_apk_patch_debug_func(args, config):
-    from thirdparty.apkd.apk.patch import apkd_apk_patch_debuggable_manifest
-    apkd_apk_patch_debuggable_manifest(config, args.proj_name)
+    apkd_apk.apkd_apk_patch_debuggable_manifest(config, args.proj_name)
 
 
 def apkd_apk_patch_frida_func(args, config):
-    from thirdparty.apkd.apk.patch import patch_in_frida_gadget
-    patch_in_frida_gadget(config, args.proj_name, not args.skip_gadget, not args.skip_smali_patch)
+    apkd_apk.patch_in_frida_gadget(config, args.proj_name, not args.skip_gadget, not args.skip_smali_patch)
 
 
 def apkd_apk_pack_func(args, config):
     # Rebuild everything.
-    from thirdparty.apkd.apk.lib import do_pack_process
-    do_pack_process(config, args.proj_name)
+    apkd_apk.do_pack_process(config, args.proj_name)
 
 
 def apkd_apk_debugify_func(args, config):
     # Extract everything.
-    from thirdparty.apkd.apk.lib import do_extraction_process
-    do_extraction_process(config, args.apk_path, args.proj_name)
+    apkd_apk.do_extraction_process(config, args.apk_path, args.proj_name)
 
-    from thirdparty.apkd.apk.patch import apkd_apk_patch_debuggable_manifest
-    apkd_apk_patch_debuggable_manifest(config, args.proj_name)
+    apkd_apk.apkd_apk_patch_debuggable_manifest(config, args.proj_name)
     
-    from thirdparty.apkd.apk.patch import patch_in_frida_gadget
-    patch_in_frida_gadget(config, args.proj_name, not args.skip_gadget, not args.skip_smali_patch)
+    apkd_apk.patch_in_frida_gadget(config, args.proj_name, not args.skip_gadget, not args.skip_smali_patch)
 
     # Rebuild everything.
-    from thirdparty.apkd.apk.lib import do_pack_process
-    do_pack_process(config, args.proj_name)
+    apkd_apk.do_pack_process(config, args.proj_name)
 
 
 # --- Emulator Management ---
