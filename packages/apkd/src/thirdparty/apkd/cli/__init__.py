@@ -807,7 +807,7 @@ def apkd_dbg_func(args, config):
     # saying re-extract (perhaps even with a rmtree to completely clear things out.)
     # Having active["apk"] not None does not implicitly mean extract.
 
-    if active["operation"] in ['debugify', 'deploy', 'stage']:
+    if active["operation"] in ['debugify', 'deploy', 'stage', 'debug']:
         if active["apk"] is None and not proj_dir.exists():
             print("No project folder and no apk to extract.")
             exit(1)
@@ -902,16 +902,23 @@ def apkd_dbg_func(args, config):
         exit(1)
     
 
-    if active["operation"] in ['deploy', 'stage']:
+    if active["operation"] in ['deploy', 'stage', 'debug']:
         # TODO: Requires APK
         # Do deploy
         from thirdparty.apkd.dbg.deploy import apkd_dbg_deploy
+        print(f"Deploying {active['proj_name']} to {active['avd']}")
         apkd_dbg_deploy(config, active, proj_dir)
         
 
-    if active["operation"] in ['stage']:
-        # Do stage
-        pass
+    if active["operation"] in ['stage', 'debug']:
+        from thirdparty.apkd.dbg.stage import apkd_dbg_stage
+        print(f"Staging {active['proj_name']} to {active['avd']}")
+        apkd_dbg_stage(config, active, proj_dir)
+
+    if active["operation"] in ['debug']:
+        import asyncio
+        from thirdparty.apkd.dbg.debug import main_with_sandbox
+        asyncio.run(main_with_sandbox())
 
 if __name__ == "__main__":
     main()

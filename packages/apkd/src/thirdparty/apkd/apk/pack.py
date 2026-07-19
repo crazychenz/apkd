@@ -69,8 +69,12 @@ def apply_source_alignment(src_apk, dst_apk, out_apk, zipalign_path="zipalign"):
     if shutil.which(zipalign_path) is None:
         raise FileNotFoundError("zipalign not found on PATH — check your Android SDK build-tools installation")
 
-    args = detect_zipalign_args(src_apk, zipalign_path=zipalign_path)
-    subprocess.run([zipalign_path, '-f', *args, dst_apk, out_apk], check=True)
+    # ! TODO: detect_zipalign_args does not work ... really only needs to detect 4 or 16.
+    # ** Note: API 33 does not support 16k.
+    #args = detect_zipalign_args(src_apk, zipalign_path=zipalign_path)
+    cmd = [zipalign_path, '-f', '-p', '4', dst_apk, out_apk]
+    print(' '.join(cmd))
+    subprocess.run(cmd, check=True)
 
 
 def do_pack_process(config, proj_name):
