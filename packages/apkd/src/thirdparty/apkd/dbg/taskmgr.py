@@ -1,7 +1,7 @@
+from __future__ import annotations
+
 import logging
 log = logging.getLogger(__name__)
-
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 from graphlib import TopologicalSorter, CycleError
@@ -15,7 +15,7 @@ class Task:
     depends_on: set[str]
 
 
-class TaskRegistry:
+class _TaskRegistry:
     def __init__(self):
         self._tasks: dict[str, Task] = {}
         self._provider_index: dict[str, str] = {}  # provided-name -> task name
@@ -85,26 +85,40 @@ class TaskRegistry:
             task.func(context)
         return context
 
-    def run_one(self, task_name: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
+    def run_one(self, target: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         Executes only what's needed to satisfy one specific task (and its
         transitive dependencies), rather than the entire registered set.
+
+        `target` can be either a task's own name, or one of the labels it
+        `provides` -- both are resolved to the owning task.
         """
         context = context if context is not None else {}
-        graph = self._build_graph()
-        ts = TopologicalSorter(graph)
-        ts.prepare()
 
+        if target in self._tasks:
+            task_name = target
+        elif target in self._provider_index:
+            task_name = self._provider_index[target]
+        else:
+            raise ValueError(
+                f"'{target}' is neither a registered task name nor a provided label"
+            )
+
+        graph = self._build_graph()
         needed = self._transitive_deps(task_name, graph) | {task_name}
 
-        while ts.is_active():
-            ready = [n for n in ts.get_ready() if n in needed]
-            for n in ts.get_ready():
-                ts.done(n)  # mark everything done to keep the sorter progressing
-            for n in ready:
-                task = self._tasks[n]
-                print(f"Running: {n}")
-                task.func(context)
+        subgraph = {n: (graph.get(n, set()) & needed) for n in needed}
+
+        try:
+            ts = TopologicalSorter(subgraph)
+            order = list(ts.static_order())
+        except CycleError as e:
+            raise ValueError(f"Circular dependency detected: {e.args[1]}") from e
+
+        for n in order:
+            task = self._tasks[n]
+            print(f"Running: {n}")
+            task.func(context)
         return context
 
     def _transitive_deps(self, task_name: str, graph: dict[str, set[str]]) -> set[str]:
@@ -116,6 +130,13 @@ class TaskRegistry:
                 seen.add(dep)
                 stack.extend(graph.get(dep, set()))
         return seen
+
+TaskRegistry = _TaskRegistry()
+
+
+
+
+
 
 
 
