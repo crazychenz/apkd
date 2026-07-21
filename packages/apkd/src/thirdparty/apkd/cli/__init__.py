@@ -369,43 +369,19 @@ def apkd_emu_images_func(args, config):
 
 
 def apkd_emu_create_func(args, config):
-    import subprocess
-    
-    #avdmanager create avd -n android13 -k "system-images;android-33;default;x86_64"
+    from thirdparty.apkd.emu.avdmgr import create_avd
+    create_avd(args.name, args.package)
 
-    cmd = [
-        "avdmanager",
-        "create", "avd",
-        "--name", args.name,
-        "--package", args.package,
-    ]
-    if args.device:
-        cmd += ["--device", device]
-    if args.force:
-        cmd.append("--force")  # overwrite existing AVD with same name, no prompt for that either
 
-    subprocess.run(
-        cmd,
-        input="no\n",   # answer to "Do you wish to create a custom hardware profile?"
-        text=True,
-        check=True,
-    )
-
-    
 def apkd_emu_ps_func(args, config):
     import subprocess
-    from thirdparty.apkd.emu.inspect import running_avd_names
-
-    # Get all avds
-    result = subprocess.run(["emulator", "-list-avds"], capture_output=True, text=True, check=True)
-    #subprocess.run(["avdmanager", "list", "avds"], check=True) # this has more complex output
-    avd_names = [avd_name for avd_name in result.stdout.splitlines() if avd_name.strip()]
+    from thirdparty.apkd.emu.inspect import running_avd_names, all_avd_names
 
     # Get running avds
     running = running_avd_names()
 
     if args.all_avds:
-        for avd_name in avd_names:
+        for avd_name in all_avd_names():
             if avd_name in running:
                 print(f"{avd_name} / {running[avd_name]}")
             else:
@@ -419,8 +395,11 @@ def apkd_emu_ps_func(args, config):
 # ! TODO: Consider adb root, adb remount
 
 def apkd_emu_start_func(args, config):
+    from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
+    base_dir = resolve_base_dir(config)
+
     from thirdparty.apkd.emu.control import apkd_emu_start
-    apkd_emu_start(config, args.name)
+    apkd_emu_start(base_dir, args.name)
 
 
 def apkd_emu_logs_func(args, config):

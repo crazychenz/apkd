@@ -9,14 +9,12 @@ LOG_FILENAME_RE = re.compile(
 )
 
 
-def build_log_path(config, avd_name: str) -> Path:
+def build_log_path(base_dir, avd_name: str) -> Path:
     """
     Computes the next log file path for this AVD: a fresh timestamp plus
     an auto-incremented boot count based on how many log files already
     exist for this AVD. Never reuses an existing filename.
     """
-    from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
-    base_dir = resolve_base_dir(config)
 
     log_dir = base_dir / "logs" / "avd"
     log_dir.mkdir(parents=True, exist_ok=True)

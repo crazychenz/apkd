@@ -35,11 +35,9 @@ def apkd_apk_patch_debuggable_manifest(config, proj_name):
     base_dir = resolve_base_dir(config)
     sdk_dir = resolve_sdk_dir(config)
 
-    from pathlib import Path
-    apkalias_path = Path(base_dir / "projects" / proj_name)
-    working_manifest_path = apkalias_path / "working" / "apk" / "AndroidManifest.xml"
+    proj_dir = Path(base_dir / "projects" / proj_name)
     from thirdparty.apkd.apk.patch import set_debuggable
-    set_debuggable(str(working_manifest_path))
+    set_debuggable(str(proj_dir / "working" / "apk" / "AndroidManifest.xml"))
 
 
 def find_main_activity(manifest_path: str) -> str | None:
@@ -298,13 +296,18 @@ def patch_in_frida_gadget(config, proj_name, inject_gadget = False, patch_smali 
 
     from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
     base_dir = resolve_base_dir(config)
-    sdk_dir = resolve_sdk_dir(config)
+    #sdk_dir = resolve_sdk_dir(config)
 
-    apkalias_path = Path(base_dir / "projects" / proj_name).resolve()
+    proj_dir = Path(base_dir / "projects" / proj_name).resolve()
+
+    patch_frida_gadget(proj_dir, base_dir, config, inject_gadget, patch_smali)
+
+
+def patch_frida_gadget(proj_dir, base_dir, config, inject_gadget = False, patch_smali = False):
 
     if patch_smali:
 
-        working_manifest_path = apkalias_path / "working" / "apk" / "AndroidManifest.xml"
+        working_manifest_path = proj_dir / "working" / "apk" / "AndroidManifest.xml"
         from thirdparty.apkd.apk.patch import find_main_activity
         main_activity = find_main_activity(working_manifest_path)
 
@@ -315,7 +318,7 @@ def patch_in_frida_gadget(config, proj_name, inject_gadget = False, patch_smali 
         print(f"Found main activity at: {main_activity}")
 
         from thirdparty.apkd.apk.patch import find_smali_file
-        smali_path = find_smali_file(main_activity, str(apkalias_path / "working" / "dex"))
+        smali_path = find_smali_file(main_activity, str(proj_dir / "working" / "dex"))
 
         if not smali_path:
             print(f"Could not find smali for {main_activity}")
@@ -330,7 +333,7 @@ def patch_in_frida_gadget(config, proj_name, inject_gadget = False, patch_smali 
     if inject_gadget:
 
         # Copy gadgets to native folder
-        working_lib_path = apkalias_path / "working" / "apk" / "lib"
+        working_lib_path = proj_dir / "working" / "apk" / "lib"
         working_lib_path.mkdir(parents=True, exist_ok=True)
         #for subdir in [d for d in working_lib_path.iterdir() if d.is_dir()]:
         for subdir in config["downloads"]["frida"]["gadget"]:
@@ -341,10 +344,6 @@ def patch_in_frida_gadget(config, proj_name, inject_gadget = False, patch_smali 
             gadget_dst_path = working_lib_path / subdir / "libfrida-gadget.so"
             gadget_dst_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(str(gadget_src_path), str(gadget_dst_path))
-
-
-
-
 
 
 

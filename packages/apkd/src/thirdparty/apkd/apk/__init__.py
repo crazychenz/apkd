@@ -20,7 +20,8 @@ __all__ += [
 ]
 
 from .extract import (
-    do_extraction_process,
+    do_extraction_process, # ! deprecated
+    extract_apk,
     create_folder_structure,
 )
 
@@ -50,7 +51,8 @@ __all__ += [
 ]
 
 from .pack import (
-    do_pack_process,
+    pack_apk,
+    do_pack_process, # ! deprecated
 )
 
 __all__ += [
@@ -58,8 +60,10 @@ __all__ += [
 ]
 
 from .patch import (
-    apkd_apk_patch_debuggable_manifest,
-    patch_in_frida_gadget,
+    apkd_apk_patch_debuggable_manifest, # ! deprecated
+    patch_in_frida_gadget, # ! deprecated
+    patch_frida_gadget,
+    set_debuggable,
 )
 
 __all__ += [

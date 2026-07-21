@@ -1,12 +1,17 @@
 def apkd_dbg_deploy(config, active, proj_dir):
 
+    deploy_proj(proj_dir, active["avd"], config)
+
+
+def deploy_proj(proj_dir, avd, config):
+
     adb_host = config["adb"]["default"]["host"]
     adb_port = int(config["adb"]["default"]["port"])
 
     from thirdparty.apkd.emu.inspect import running_avd_names
     running = running_avd_names()
 
-    device_name = running[active["avd"]]
+    device_name = running[avd]
 
     from ppadb.client import Client as AdbClient
     client = AdbClient(host=adb_host, port=adb_port)

@@ -4,6 +4,13 @@ import os
 from pathlib import Path
 
 
+def all_avd_names():
+    import subprocess
+    result = subprocess.run(["emulator", "-list-avds"], capture_output=True, text=True, check=True)
+    #subprocess.run(["avdmanager", "list", "avds"], check=True) # this has more complex output
+    return [avd_name for avd_name in result.stdout.splitlines() if avd_name.strip()]
+
+
 def running_avd_names(host: str = "127.0.0.1", port: int = 5037):
     client = AdbClient(host=host, port=port)
     devices = client.devices()

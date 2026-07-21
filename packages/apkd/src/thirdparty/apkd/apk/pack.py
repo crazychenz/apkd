@@ -79,15 +79,21 @@ def apply_source_alignment(src_apk, dst_apk, out_apk, zipalign_path="zipalign"):
 
 def do_pack_process(config, proj_name):
 
-    from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
-    base_dir = resolve_base_dir(config)
-    sdk_dir = resolve_sdk_dir(config)
+    # from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
+    # base_dir = resolve_base_dir(config)
+    # sdk_dir = resolve_sdk_dir(config)
 
-    apkalias_path = Path(base_dir / "projects" / proj_name).resolve()
-    working_apk_path = apkalias_path / "working" / "apk"
+    proj_dir = Path(base_dir / "projects" / proj_name).resolve()
+    pack_apk(base_dir, sdk_dir, proj_dir, config)
+
+def pack_apk(proj_dir, config):
+    # TODO: Use base_dir, sdk_dir
+    # TODO: Write config function for sdk commands?
+
+    working_apk_path = proj_dir / "working" / "apk"
 
     # Initially copy working/apk to .build/apk
-    build_apk_path = apkalias_path / ".build" / "apk"
+    build_apk_path = proj_dir / ".build" / "apk"
     shutil.copytree(str(working_apk_path), str(build_apk_path), symlinks=True, dirs_exist_ok=True)
 
     # Encode AndroidManifest.xml
@@ -105,24 +111,24 @@ def do_pack_process(config, proj_name):
 
     # Reconstruct all dex files
     smali_jar = os.path.expandvars(config["sdk"]["jars"]["smali"])
-    working_dex_prefix = apkalias_path / "working" / "dex"
+    working_dex_prefix = proj_dir / "working" / "dex"
     from thirdparty.apkd.apk.dex import dex_reassemble_all
     dex_reassemble_all(working_dex_prefix, smali_jar, build_apk_path)
 
     # Build unaligned APK
-    build_unaligned_apk_path = apkalias_path / ".build" / "pkg" / "unaligned.apk"
-    build_unsigned_apk_path = apkalias_path / ".build" / "pkg" / "unsigned.apk"
+    build_unaligned_apk_path = proj_dir / ".build" / "pkg" / "unaligned.apk"
+    build_unsigned_apk_path = proj_dir / ".build" / "pkg" / "unsigned.apk"
     from thirdparty.apkd.apk.pack import build_apk_zip
     build_apk_zip(build_apk_path, build_unaligned_apk_path)
 
     # Build unsigned (i.e. aligned) apk
     from thirdparty.apkd.apk.pack import apply_source_alignment
     zipalign_path = config["sdk"]["commands"]["zipalign"]
-    original_resigned_path = apkalias_path / ".original" / "pkg" / "original-resigned.apk"
+    original_resigned_path = proj_dir / ".original" / "pkg" / "original-resigned.apk"
     apply_source_alignment(str(original_resigned_path), str(build_unaligned_apk_path), str(build_unsigned_apk_path), zipalign_path=zipalign_path)
 
     # Sign apk
-    working_pkg_path = apkalias_path / "working" / "pkg" / "working.apk"
+    working_pkg_path = proj_dir / "working" / "pkg" / "working.apk"
     from thirdparty.apkd.apk.sign import sign_apk
     sign_apk(config, str(build_unsigned_apk_path), str(working_pkg_path))
 

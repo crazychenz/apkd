@@ -323,9 +323,7 @@ def save_apkd_config(config:dict={}, config_path=None, force:bool=False):
         yaml.dump(apkd_util.deep_merge(baseline_empty_config(), config), f, sort_keys=False)
 
 
-def resolve_base_dir(config=None):
-    # Assumes config already loaded.
-
+def implicit_base_dir():
     # Worst case, use local folder.
     base_dir = Path('.') / "apkd"
     
@@ -334,26 +332,32 @@ def resolve_base_dir(config=None):
         # We're in a venv, use it.
         base_dir = Path(sys.prefix) / "apkd"
 
-    # Assuming config, env, and cli overrides applied.
-    if "base_dir" in config and config["base_dir"] is not None:
-        base_dir = Path(config["base_dir"])
-
     return base_dir.resolve()
 
 
-def resolve_sdk_dir(config=None):
-    base_dir = resolve_base_dir(config)
+def implicit_sdk_dir():
+    return implicit_base_dir() / "sdk"
 
-    sdk_dir = base_dir / "sdk"
+
+def resolve_base_dir(config=None):
+    # Assumes config already loaded.
+    if "base_dir" in config and config["base_dir"] is not None:
+        return resolve_base_dir(config["base_dir"])
+
+    return implicit_base_dir()
+
+
+def resolve_sdk_dir(config=None):
     if "sdk" in config and isinstance(config["sdk"], dict):
         if "sdk_dir" in config["sdk"] and config["sdk"]["sdk_dir"] is not None:
-            sdk_dir = Path(config["sdk"]["sdk_dir"])
-    
-    return sdk_dir.resolve()
+            return Path(config["sdk"]["sdk_dir"]).resolve()
+
+    return implicit_sdk_dir()
 
 
 
-
+def implicit_proj_dir(proj_name):
+    return implicit_base_dir() / "projects" / proj_name
 
 
 

@@ -4,7 +4,7 @@ import psutil
 from thirdparty.apkd.emu.inspect import running_avd_names
 
 
-def apkd_emu_start(config, avd_name):
+def apkd_emu_start(base_dir, avd_name):
 
     #import tempfile
     import subprocess
@@ -29,8 +29,9 @@ def apkd_emu_start(config, avd_name):
 
     #fd, log_path = tempfile.mkstemp(prefix="apkd_emu_", suffix=".log")
     #log_file = os.fdopen(fd, "w")
+    
     from thirdparty.apkd.emu.logs import build_log_path
-    log_path = build_log_path(config, avd_name).resolve()
+    log_path = build_log_path(base_dir, avd_name).resolve()
     log_file = open(str(log_path), "w")
 
     proc = subprocess.Popen(
