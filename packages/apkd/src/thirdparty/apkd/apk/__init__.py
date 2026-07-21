@@ -64,6 +64,7 @@ from .patch import (
     patch_in_frida_gadget, # ! deprecated
     patch_frida_gadget,
     set_debuggable,
+    set_extract_native_libs,
 )
 
 __all__ += [

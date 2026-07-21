@@ -113,7 +113,10 @@ def apkd_dbg_task_patch(ctx):
     active = ctx["active"]
 
     print("Patching manifest")
-    apkd_apk.set_debuggable(str(active.proj_dir / "working" / "apk" / "AndroidManifest.xml"))
+    manifest_path = active.proj_dir / "working" / "apk" / "AndroidManifest.xml"
+    apkd_apk.set_debuggable(str(manifest_path))
+    apkd_apk.set_extract_native_libs(str(manifest_path))
+
     print("Injecting gadget")
     apkd_apk.patch_frida_gadget(active.proj_dir, active.base_dir, ctx["config"], inject_gadget = True, patch_smali = False)
 
@@ -302,7 +305,10 @@ def apkd_dbg_task_debug(ctx):
 
     import asyncio
     from thirdparty.apkd.dbg.debug import main_with_sandbox
-    asyncio.run(main_with_sandbox())
+    try:
+        asyncio.run(main_with_sandbox())
+    except KeyboardInterrupt:
+        print("\nExiting debug session.")
 
 
 class ActiveConfig:

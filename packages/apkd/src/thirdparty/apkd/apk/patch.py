@@ -30,14 +30,52 @@ def set_debuggable(manifest_path: str) -> None:
     )
 
 
+def set_extract_native_libs(manifest_path: str) -> None:
+    """
+    Idempotently set android:extractNativeLibs="true" on the <application> element
+    of a decoded AndroidManifest.xml.
+
+    - If the attribute is missing, it is added with value "true".
+    - If the attribute exists and is "false" (or anything other than "true"), it is set to "true".
+    - If the attribute already exists and is "true", the file is left untouched (no write).
+    """
+
+    import lxml.etree as etree
+    tree = etree.parse(manifest_path)
+    root = tree.getroot()
+
+    application = root.find("application")
+    if application is None:
+        raise ValueError(f"No <application> element found in {manifest_path}")
+
+    ANDROID_NS = "http://schemas.android.com/apk/res/android"
+    extract_native_libs_attr = f"{{{ANDROID_NS}}}extractNativeLibs"
+
+    current_value = application.get(extract_native_libs_attr)
+    if current_value == "true":
+        return  # already set correctly, no-op
+
+    application.set(extract_native_libs_attr, "true")
+
+    tree.write(
+        manifest_path,
+        xml_declaration=True,
+        encoding="utf-8",
+        pretty_print=True,
+    )
+
+
 def apkd_apk_patch_debuggable_manifest(config, proj_name):
     from thirdparty.apkd.config import resolve_sdk_dir, resolve_base_dir
     base_dir = resolve_base_dir(config)
     sdk_dir = resolve_sdk_dir(config)
 
     proj_dir = Path(base_dir / "projects" / proj_name)
-    from thirdparty.apkd.apk.patch import set_debuggable
-    set_debuggable(str(proj_dir / "working" / "apk" / "AndroidManifest.xml"))
+    #from thirdparty.apkd.apk.patch import set_debuggable, set_extract_native_libs
+    manifest_path = proj_dir / "working" / "apk" / "AndroidManifest.xml"
+
+    set_debuggable(str(manifest_path))
+    set_extract_native_libs(str(manifest_path))
 
 
 def find_main_activity(manifest_path: str) -> str | None:
