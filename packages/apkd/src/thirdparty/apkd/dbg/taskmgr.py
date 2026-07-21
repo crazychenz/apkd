@@ -117,7 +117,7 @@ class _TaskRegistry:
 
         for n in order:
             task = self._tasks[n]
-            print(f"Running: {n}")
+            log.debug(f"Task manager run_one running {n}")
             task.func(context)
         return context
 

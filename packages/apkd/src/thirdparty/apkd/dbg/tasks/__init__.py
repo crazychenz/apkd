@@ -75,7 +75,7 @@ from thirdparty.apkd.dbg.taskmgr import TaskRegistry
 
 @TaskRegistry.register(provides=["extract"])
 def apkd_dbg_task_extract(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     args = ctx["args"]
     config = ctx["config"]
@@ -86,13 +86,14 @@ def apkd_dbg_task_extract(ctx):
 
     if active.apk is not None:
         if active.proj_dir.exists():
-            # We happy, do nothing.
+            print(f"We have apk, but {args.proj_name} already extracted, do nothing.")
+
             return
         else:
             apkd_apk.extract_apk(active.apk, active.base_dir, active.sdk_dir, active.proj_dir, config)
     else:
         if active.proj_dir.exists():
-            # we have no apk and already extracted, happy.
+            print(f"We have no apk and {args.proj_name} already extracted, do nothing.")
             return
         else:
             print("Requested extraction without apk path. Exiting.")
@@ -101,7 +102,7 @@ def apkd_dbg_task_extract(ctx):
 
 @TaskRegistry.register(provides=["patch"], depends_on=["extract"])
 def apkd_dbg_task_patch(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     """
         Assuming all patching is idempotent
@@ -119,7 +120,7 @@ def apkd_dbg_task_patch(ctx):
 
 @TaskRegistry.register(provides=["pack"], depends_on=["extract", "patch"])
 def apkd_dbg_task_pack(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     """
     Repacking assumed to always be unconditional.
@@ -130,7 +131,7 @@ def apkd_dbg_task_pack(ctx):
 
 @TaskRegistry.register(provides=["debugify"], depends_on=["patch", "pack"])
 def apkd_dbg_task_debugify(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     """
     Let the dependencies do their thing.
@@ -139,7 +140,7 @@ def apkd_dbg_task_debugify(ctx):
 
 @TaskRegistry.register(provides=["emu_pull"])
 def apkd_dbg_task_emu_pull(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     '''
     if we're here, we have avd. Does the avd exist? Does the avd match image?
@@ -172,6 +173,7 @@ def apkd_dbg_task_emu_pull(ctx):
         if active.avd in all_avd_names():
             if active.image is None:
                 # AVD exists and no image, nothing to do.
+                print(f"AVD {active.avd} exists and no image, nothing to do.")
                 return
             avd_image = get_system_image_for_avd(active.avd).get("package_id_slash", '')
             if avd_image == active.image:
@@ -197,7 +199,7 @@ def apkd_dbg_task_emu_pull(ctx):
 
 @TaskRegistry.register(provides=["emu_create"], depends_on=["emu_pull"])
 def apkd_dbg_task_emu_create(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     """
     we assume we have image and avd is defined here
@@ -215,17 +217,19 @@ def apkd_dbg_task_emu_create(ctx):
 
     from thirdparty.apkd.emu.inspect import all_avd_names
     if active.avd in all_avd_names():
+        print(f"AVD {active.avd} already exist. Do nothing.")
         # avd created, nothing to do.
         return
     else:
         from thirdparty.apkd.emu.avdmgr import create_avd
+        print(f"Creating AVD {active.avd}.")
         create_avd(args.name, args.package)
 
 
 @TaskRegistry.register(provides=["emu_start"], depends_on=["emu_create"])
 def apkd_dbg_task_emu_start(ctx):
     # TODO: Handle emu_gui
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     """
     we assume that the avd exists and matches image here
@@ -240,16 +244,18 @@ def apkd_dbg_task_emu_start(ctx):
 
     from thirdparty.apkd.emu.inspect import running_avd_names
     if active.avd in running_avd_names():
+        print(f"AVD {active.avd} already running. Do nothing.")
         # avd already running
         return
     else:
         from thirdparty.apkd.emu.control import apkd_emu_start
+        print(f"Starting AVD {active.avd}.")
         apkd_emu_start(active.base_dir, active.avd)
 
 
 @TaskRegistry.register(provides=["deploy"], depends_on=["emu_start", "debugify"])
 def apkd_dbg_task_deploy(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     """
     Deployment assumed to always be unconditional.
@@ -261,13 +267,14 @@ def apkd_dbg_task_deploy(ctx):
     active = ctx["active"]
 
     from thirdparty.apkd.dbg.deploy import deploy_proj
+    print(f"Deploying {active.proj_name} to AVD {active.avd}.")
     deploy_proj(active.proj_dir, active.avd, config)
 
 
 
 @TaskRegistry.register(provides=["stage"], depends_on=["deploy"])
 def apkd_dbg_task_stage(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     """
     Staging assumed to always be unconditional.
@@ -279,12 +286,13 @@ def apkd_dbg_task_stage(ctx):
     active = ctx["active"]
 
     from thirdparty.apkd.dbg.stage import stage_proj
+    print(f"Staging {active.proj_name} on AVD {active.avd}.")
     stage_proj(active.proj_dir, active.avd, config)
 
 
 @TaskRegistry.register(provides=["debug"], depends_on=["stage"])
 def apkd_dbg_task_debug(ctx):
-    print(f"Inside {sys._getframe().f_code.co_name}")
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
 
     """
     New debug session assumed to always be unconditional.
