@@ -33,7 +33,8 @@ native_script = None
 native_rpc = None
 
 
-def native_connect(self, proc_pid, frida_port='127.0.0.1:27042'):
+def native_connect(proc_pid, frida_port='127.0.0.1:27042', max_attempts=30, retry_delay=0.5):
+    import time
     import frida
     from thirdparty.apkd.dbg.native import RPC_SCRIPT
 
@@ -45,8 +46,26 @@ def native_connect(self, proc_pid, frida_port='127.0.0.1:27042'):
     native_device = frida.get_device_manager().add_remote_device(frida_port)
     #native_device = frida.get_usb_device()
 
-    native_session = device.attach(proc_pid)    
+    # This runs concurrently with system_load_gadget(), so the gadget's
+    # listening socket may not exist yet (it only comes up once dlopen()
+    # reaches the gadget's JNI_OnLoad). Retry attach() until it does, or
+    # until we time out.
+    native_session = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            native_session = native_device.attach(proc_pid)
+            break
+        except Exception as e:
+            if attempt == max_attempts:
+                print(f"native_connect: giving up attaching to pid {proc_pid} "
+                      f"after {max_attempts} attempts: {e}")
+                return
+            time.sleep(retry_delay)
+
     if native_session:
+        # Gadget's on_load is "wait": dlopen() blocks in the target process
+        # until we attach and explicitly resume it.
+        native_session.resume()
         # Add utility function.
         native_script = native_session.create_script(RPC_SCRIPT)
         native_script.on("message", lambda msg, data: print("FRIDA MESSAGE:", msg, data))
@@ -72,7 +91,21 @@ async def main(ctx):
         bp_info, = args
         await bp_info.dbg.disable_breakpoint_event(event.requestID)
         print(f"Breakpoint hit on thread {event.thread}; injecting frida-gadget...")
-        # Need to run this somewhere: native_connect(ctx["proc_pid"])
+
+        # The gadget's on_load is "wait": System.load()/dlopen() inside the
+        # target process will not return until a frida client attaches and
+        # calls session.resume(). native_connect() does that, but it's a
+        # blocking frida call, so it must run in a worker thread, and it
+        # must be started BEFORE we await system_load_gadget() below --
+        # otherwise nothing is left running that could ever unblock it
+        # (system_load_gadget itself would never return, so this line would
+        # never be reached).
+        print("Ensuring native connect future")
+        loop = asyncio.get_running_loop()
+        asyncio.ensure_future(
+            loop.run_in_executor(None, native_connect, ctx["proc_pid"])
+        )
+
         await bp_info.dbg.system_load_gadget("frida-gadget", thread_id=event.thread)
         print('frida-gadget injection returned; resuming VM.')
 
