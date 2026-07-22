@@ -1,3 +1,7 @@
+
+import logging
+log = logging.getLogger(__name__)
+
 from pathlib import Path
 import re
 
@@ -85,3 +89,5 @@ def stage_proj(proj_dir, avd, config):
     time.sleep(3)
 
     # --- Assuming JDWP is now available, we'll use it to start frida ---
+
+    return proc_pid

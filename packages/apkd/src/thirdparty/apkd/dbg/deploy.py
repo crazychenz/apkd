@@ -1,3 +1,6 @@
+import logging
+log = logging.getLogger(__name__)
+
 def apkd_dbg_deploy(config, active, proj_dir):
 
     deploy_proj(proj_dir, active["avd"], config)

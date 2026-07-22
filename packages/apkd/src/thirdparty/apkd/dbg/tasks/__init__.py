@@ -290,7 +290,7 @@ def apkd_dbg_task_stage(ctx):
 
     from thirdparty.apkd.dbg.stage import stage_proj
     print(f"Staging {active.proj_name} on AVD {active.avd}.")
-    stage_proj(active.proj_dir, active.avd, config)
+    ctx["proc_pid"] = stage_proj(active.proj_dir, active.avd, config)
 
 
 @TaskRegistry.register(provides=["debug"], depends_on=["stage"])
@@ -306,7 +306,7 @@ def apkd_dbg_task_debug(ctx):
     import asyncio
     from thirdparty.apkd.dbg.debug import main_with_sandbox
     try:
-        asyncio.run(main_with_sandbox())
+        asyncio.run(main_with_sandbox(ctx))
     except KeyboardInterrupt:
         print("\nExiting debug session.")
 

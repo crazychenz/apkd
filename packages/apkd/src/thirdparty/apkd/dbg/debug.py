@@ -1,4 +1,7 @@
 
+import logging
+log = logging.getLogger(__name__)
+
 import asyncio
 from thirdparty.jdwp import Jdwp, Byte, Boolean, Int, String, ReferenceTypeID
 
@@ -22,7 +25,39 @@ dbg = thirdparty.debug.dalvik.Debugger()
 dbg_state = dbg.state
 
 
-async def main():
+# ** Keeping these in global scope for proof of concept. **
+# TODO: These need to move to a class instance.
+native_device = None
+native_session = None
+native_script = None
+native_rpc = None
+
+
+def native_connect(self, proc_pid, frida_port='127.0.0.1:27042'):
+    import frida
+    from thirdparty.apkd.dbg.native import RPC_SCRIPT
+
+    global native_device
+    global native_session
+    global native_script
+    global native_rpc
+
+    native_device = frida.get_device_manager().add_remote_device(frida_port)
+    #native_device = frida.get_usb_device()
+
+    native_session = device.attach(proc_pid)    
+    if native_session:
+        # Add utility function.
+        native_script = native_session.create_script(RPC_SCRIPT)
+        native_script.on("message", lambda msg, data: print("FRIDA MESSAGE:", msg, data))
+        native_script.load()
+        native_rpc = native_script.exports_sync
+        print("native_rpc is set.")
+        #print("ping -> ", self.rpc.ping())
+
+
+
+async def main(ctx):
     global dbg
     global jdwp
     global bp
@@ -33,13 +68,14 @@ async def main():
     jdwp = dbg.jdwp
     dbg.print_summary()
 
-
     async def load_gadget_on_break(event, composite, args):
         bp_info, = args
         await bp_info.dbg.disable_breakpoint_event(event.requestID)
         print(f"Breakpoint hit on thread {event.thread}; injecting frida-gadget...")
+        # Need to run this somewhere: native_connect(ctx["proc_pid"])
         await bp_info.dbg.system_load_gadget("frida-gadget", thread_id=event.thread)
         print('frida-gadget injection returned; resuming VM.')
+
         await bp_info.dbg.resume_vm()
 
     loadGadget = dbg.create_breakpoint(**{
@@ -62,10 +98,10 @@ async def main():
         exit(0)
 
 
-async def main_with_sandbox():
+async def main_with_sandbox(ctx):
     socket_path = "/tmp/asyncrepl.sock"
     repl_coro = Repl(namespace=globals()).start_repl_server(socket_path=socket_path)
     repl_task = asyncio.create_task(repl_coro)
-    main_task = asyncio.create_task(main())
+    main_task = asyncio.create_task(main(ctx))
     await asyncio.gather(repl_task, main_task)
 
