@@ -1,0 +1,97 @@
+07-16 09:30:22.693   579  1459 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+
+
+07-16 09:30:23.625  5041  5055 W .kau.playground: Openjdkjvmti plugin was loaded on a non-debuggable Runtime. Plugin was loaded too late to change runtime state to DEBUGGABLE. Only kArtTiVersion (0x70010200) environments are available. Some functionality might not work properly.
+07-16 09:30:23.640  5041  5055 E .kau.playground: JVMTI Version 0x30010000 requested but the runtime is not debuggable! Only limited, best effort kArtTiVersion (0x70010200) environments are available. If possible, rebuild your apk in debuggable mode or start the runtime with the `-Xcompiler-option --debuggable` flags.
+07-16 09:30:23.640  5041  5055 E .kau.playground: Bad JNI version passed to GetEnv: 805371904
+07-16 09:30:23.646  5041  5055 I .kau.playground: debuggable & jni-type indices are required to implement structural class redefinition extensions.
+07-16 09:30:25.704  1571  1658 D BufferPoolAccessor2.0: bufferpool2 0x73b0868d7a08 : 5(19200 size) total buffers - 4(15360 size) used buffers - 45824/45829 (recycle/alloc) - 30/91649 (fetch/transfer)
+07-16 09:30:25.704   521  1666 D BufferPoolAccessor2.0: bufferpool2 0x705f28559128 : 2(48000 size) total buffers - 1(24000 size) used buffers - 45824/45826 (recycle/alloc) - 2/45824 (fetch/transfer)
+07-16 09:30:26.943   521   781 D BufferPoolAccessor2.0: bufferpool2 0x705f2855a5f8 : 1(524288 size) total buffers - 0(0 size) used buffers - 933/967 (recycle/alloc) - 34/967 (fetch/transfer)
+07-16 09:30:26.943   521   781 D BufferPoolAccessor2.0: evictor expired: 1, evicted: 1
+07-16 09:30:27.072   751   751 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS
+07-16 09:30:27.242   579   597 D VRI[playground]: updatePointerIcon called with position out of bounds
+07-16 09:30:27.259   579   597 D VRI[playground]: updatePointerIcon called with position out of bounds
+07-16 09:30:27.509   579   597 D VRI[playground]: updatePointerIcon called with position out of bounds
+07-16 09:30:27.526   579   597 D VRI[playground]: updatePointerIcon called with position out of bounds
+07-16 09:30:27.542   579   597 D VRI[playground]: updatePointerIcon called with position out of bounds
+07-16 09:30:27.559   579   597 D VRI[playground]: updatePointerIcon called with position out of bounds
+07-16 09:30:29.224  5041  5041 I System.out: Debugger has connected
+07-16 09:30:29.224  5041  5041 I System.out: waiting for debugger to settle...
+07-16 09:30:29.424  5041  5041 I System.out: waiting for debugger to settle...
+07-16 09:30:29.625  5041  5041 I System.out: waiting for debugger to settle...
+07-16 09:30:29.679   254  4875 I keystore2: keystore2::watchdog: Watchdog thread idle -> terminating. Have a great day.
+07-16 09:30:29.692   579   599 W ActivityTaskManager: Launch timeout has expired, giving up wake lock!
+07-16 09:30:29.733   579   599 D CompatibilityChangeReporter: Compat change id reported: 181136395; UID 10163; state: DISABLED
+07-16 09:30:29.733   579   599 D CompatibilityChangeReporter: Compat change id reported: 174042936; UID 10163; state: DISABLED
+07-16 09:30:29.759   455   469 W TransactionTracing: Could not find layer handle 0x7c398f22b890
+07-16 09:30:29.825  5041  5041 I System.out: waiting for debugger to settle...
+07-16 09:30:30.025  5041  5041 I System.out: waiting for debugger to settle...
+07-16 09:30:30.225  5041  5041 I System.out: waiting for debugger to settle...
+07-16 09:30:30.426  5041  5041 I System.out: waiting for debugger to settle...
+07-16 09:30:30.626  5041  5041 I System.out: debugger has settled (1402)
+07-16 09:30:30.627   579   597 D CoreBackPreview: Window{c495fef u0 Waiting For Debugger: sh.kau.playground}: Setting back callback null
+07-16 09:30:30.629   579   597 W InputManager-JNI: Input channel object 'c495fef Waiting For Debugger: sh.kau.playground (client)' was disposed without first being removed with the input manager!
+07-16 09:30:30.639  5041  5041 V GraphicsEnvironment: ANGLE Developer option for 'sh.kau.playground' set to: 'default'
+07-16 09:30:30.639  5041  5041 V GraphicsEnvironment: ANGLE GameManagerService for sh.kau.playground: false
+07-16 09:30:30.639  5041  5041 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+07-16 09:30:30.641  5041  5041 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+07-16 09:30:30.642  5041  5041 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+07-16 09:30:30.644   579   599 V WindowManager: Unknown focus tokens, dropping reportFocusChanged
+07-16 09:30:30.725  5041  5359 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+07-16 09:30:30.729  5041  5359 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+07-16 09:30:30.732  5041  5359 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+07-16 09:30:30.735   579  1704 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10163; state: ENABLED
+07-16 09:30:30.769   579  1704 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10163; state: DISABLED
+07-16 09:30:30.771   579  1704 D CoreBackPreview: Window{afb9eea u0 sh.kau.playground/sh.kau.playground.app.ui.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6bd0878, mPriority=0}
+07-16 09:30:30.824  1571  1658 D BufferPoolAccessor2.0: bufferpool2 0x73b0868d7a08 : 5(19200 size) total buffers - 4(15360 size) used buffers - 46080/46085 (recycle/alloc) - 30/92161 (fetch/transfer)
+07-16 09:30:30.825   521  1666 D BufferPoolAccessor2.0: bufferpool2 0x705f28559128 : 2(48000 size) total buffers - 1(24000 size) used buffers - 46080/46082 (recycle/alloc) - 2/46080 (fetch/transfer)
+07-16 09:30:31.031   455   752 W ServiceManager: Permission failure: android.permission.ACCESS_SURFACE_FLINGER from uid=10163 pid=0
+07-16 09:30:31.031   455   752 D PermissionCache: checking android.permission.ACCESS_SURFACE_FLINGER for uid=10163 => denied (328 us)
+07-16 09:30:31.032   455   467 W ServiceManager: Permission failure: android.permission.ACCESS_SURFACE_FLINGER from uid=10163 pid=5041
+07-16 09:30:31.032   455   752 W ServiceManager: Permission failure: android.permission.ROTATE_SURFACE_FLINGER from uid=10163 pid=0
+07-16 09:30:31.032   455   752 D PermissionCache: checking android.permission.ROTATE_SURFACE_FLINGER for uid=10163 => denied (405 us)
+07-16 09:30:31.032   455   467 D PermissionCache: checking android.permission.ACCESS_SURFACE_FLINGER for uid=10163 => denied (505 us)
+07-16 09:30:31.032   455   752 W ServiceManager: Permission failure: android.permission.INTERNAL_SYSTEM_WINDOW from uid=10163 pid=0
+07-16 09:30:31.032   455   752 D PermissionCache: checking android.permission.INTERNAL_SYSTEM_WINDOW for uid=10163 => denied (55 us)
+07-16 09:30:31.032   455   467 W ServiceManager: Permission failure: android.permission.INTERNAL_SYSTEM_WINDOW from uid=10163 pid=5041
+07-16 09:30:31.032   455   467 D PermissionCache: checking android.permission.INTERNAL_SYSTEM_WINDOW for uid=10163 => denied (496 us)
+07-16 09:30:31.037  5041  5357 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+07-16 09:30:31.039  5041  5357 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+07-16 09:30:31.040  5041  5357 D EGL_emulation: eglCreateContext: 0x70e35fefe890: maj 3 min 0 rcv 3
+07-16 09:30:31.042  5041  5357 D EGL_emulation: eglMakeCurrent: 0x70e35fefe890: ver 3 0 (tinfo 0x70e5826f6080) (first time)
+07-16 09:30:31.051   234   234 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+07-16 09:30:31.051  5041  5357 I Gralloc4: mapper 4.x is not supported
+07-16 09:30:31.055   234   234 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.allocator@4.0::IAllocator/default in either framework or device VINTF manifest.
+07-16 09:30:31.056   232   232 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+07-16 09:30:31.057  5041  5357 W Gralloc4: allocator 4.x is not supported
+07-16 09:30:31.059   455   469 W TransactionTracing: Could not find layer handle 0x7c398f2290d0
+07-16 09:30:31.064  5041  5357 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+07-16 09:30:31.459  5041  5357 W Parcel  : Expecting binder but got null!
+07-16 09:30:31.464  5041  5066 I OpenGLRenderer: Davey! duration=798ms; Flags=1, FrameTimelineVsyncId=8126, IntendedVsync=948625415393, Vsync=948725415389, InputEventId=0, HandleInputStart=948738305354, AnimationStart=948738308340, PerformTraversalsStart=948738547415, DrawStart=949032086117, FrameDeadline=948642082059, FrameInterval=948738285086, FrameStartTime=16666666, SyncQueued=949044754398, SyncStart=949045049949, IssueDrawCommandsStart=949045587150, SwapBuffers=949292198036, FrameCompleted=949424316102, DequeueBufferDuration=6322, QueueBufferDuration=592614, GpuCompleted=949424046620, SwapBuffersCompleted=949424316102, DisplayPresentTime=124119990623840, CommandSubmissionCompleted=949292198036,
+07-16 09:30:31.466   579   596 I ActivityTaskManager: Displayed sh.kau.playground/.app.ui.MainActivity: +11s781ms
+07-16 09:30:31.476  5041  5041 I Choreographer: Skipped 40 frames!  The application may be doing too much work on its main thread.
+07-16 09:30:31.487   579   889 D CompatibilityChangeReporter: Compat change id reported: 214016041; UID 10163; state: ENABLED
+07-16 09:30:31.495   455   469 W TransactionTracing: Could not find layer handle 0x7c398f22a4b0
+07-16 09:30:31.831   579  1704 D CoreBackPreview: Window{23dd958 u0 Splash Screen sh.kau.playground EXITING}: Setting back callback null
+07-16 09:30:31.832   579  3886 W InputManager-JNI: Input channel object '23dd958 Splash Screen sh.kau.playground (client)' was disposed without first being removed with the input manager!
+07-16 09:30:31.881   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8356, 4217510, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.881   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8372, 6220209, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.882   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8388, 6312529, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.882   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8428, 5061709, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.882   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8436, 5607640, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.882   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8452, 5566201, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.882   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8460, 5625074, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.882   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8468, 5032594, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.882   757   850 W FrameTracker: Missed SF frame:PREDICTION_ERROR, 8476, 0, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.883   757   850 W FrameTracker: Missing HWUI jank callback for vsyncId: 8476, CUJ=J<SPLASHSCREEN_EXIT_ANIM>
+07-16 09:30:31.883   757   825 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-39 - not enough time since last trigger
+07-16 09:30:32.009   455   469 W TransactionTracing: Could not find layer handle 0x7c398f22a210
+07-16 09:30:32.010   455   469 W TransactionTracing: Could not find layer handle 0x7c398f22a9f0
+07-16 09:30:32.010   455   469 W TransactionTracing: Could not find layer handle 0x7c398f22ae10
+07-16 09:30:32.010   455   469 W TransactionTracing: Could not find layer handle 0x7c398f22ae10
+07-16 09:30:32.010   455   469 W TransactionTracing: Could not find layer handle 0x7c398f22a9f0
+07-16 09:30:32.017   757  1239 D EGL_emulation: app_time_stats: avg=1800.67ms min=7.31ms max=14286.40ms count=8
+07-16 09:30:32.465   521  1671 D BufferPoolAccessor2.0: bufferpool2 0x705f2855a5f8 : 1(524288 size) total buffers - 1(524288 size) used buffers - 1007/1042 (recycle/alloc) - 35/1041 (fetch/transfer)
+07-16 09:30:35.008   751   751 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS
+07-16 09:30:35.288   579   660 D ActivityManager: freezing 1125 com.android.dialer
