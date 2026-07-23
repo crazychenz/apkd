@@ -22,5 +22,4 @@ typst
 *.xz
 *.so
 
-jdwp/
 frida/frida-server-17.3.2-android-x86_64
