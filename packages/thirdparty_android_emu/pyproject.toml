@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thirdparty-android-emu"
+version = "0.0.1"
+description = "Android emulator management"
+requires-python = ">=3.7"
+
+dependencies = [
+    "thirdparty-android-sdk",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+
+#[project.scripts]
+#mycli = "mypackage.cli:main"

@@ -28,7 +28,7 @@ await dbg.cli_object_values()
 import asyncio
 from thirdparty.jdwp import Jdwp, Byte, Boolean, Int, String, ReferenceTypeID
 
-from thirdparty.sandbox.repl import Repl
+from thirdparty.python.repl.repl import Repl
 import thirdparty.debug.dalvik
 from thirdparty.debug.dalvik.util.adb import AdbObject
 from thirdparty.debug.dalvik.util.native import NativeObject

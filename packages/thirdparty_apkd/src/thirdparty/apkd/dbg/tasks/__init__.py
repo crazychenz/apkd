@@ -310,6 +310,23 @@ def apkd_dbg_task_debug(ctx):
     except KeyboardInterrupt:
         print("\nExiting debug session.")
 
+@TaskRegistry.register(provides=["debugtty"], depends_on=[""])
+def apkd_dbg_task_debugtty(ctx):
+    log.debug(f"Inside {sys._getframe().f_code.co_name}")
+
+    """
+    New debug session assumed to always be unconditional.
+
+    TODO: Reuse existing sessions? Kill any existing sessions?
+    """
+
+    import asyncio
+    from thirdparty.python.repl import start_raw_tty_repl_client
+    try:
+        asyncio.run(start_raw_tty_repl_client(socket_path="/tmp/asyncrepl.sock"))
+    except KeyboardInterrupt:
+        print("\nTTY Client exiting")
+
 
 class ActiveConfig:
     def __init__(self, config, args, operation, proj_name):

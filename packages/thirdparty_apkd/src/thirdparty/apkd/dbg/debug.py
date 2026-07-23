@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 import asyncio
 from thirdparty.jdwp import Jdwp, Byte, Boolean, Int, String, ReferenceTypeID
 
-from thirdparty.sandbox.repl import Repl
+from thirdparty.python.repl.repl import Repl
 import thirdparty.debug.dalvik
 from thirdparty.debug.dalvik.util.adb import AdbObject
 from thirdparty.debug.dalvik.util.native import NativeObject
@@ -109,7 +109,8 @@ async def main(ctx):
         await bp_info.dbg.system_load_gadget("frida-gadget", thread_id=event.thread)
         print('frida-gadget injection returned; resuming VM.')
 
-        await bp_info.dbg.resume_vm()
+        # Frida should be running now, but we'll let the user resume the VM.
+        #await bp_info.dbg.resume_vm()
 
     loadGadget = dbg.create_breakpoint(**{
         'class_signature': 'Landroid/os/Handler;',

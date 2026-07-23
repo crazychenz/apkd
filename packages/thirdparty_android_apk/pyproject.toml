@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thirdparty-android-apk"
+version = "0.0.1"
+description = "Android APK inspection and patching"
+requires-python = ">=3.7"
+
+dependencies = [
+    "pyaxml",
+    "androguard",
+    "pyyaml",
+    "protobuf",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+
+#[project.scripts]
+#mycli = "mypackage.cli:main"

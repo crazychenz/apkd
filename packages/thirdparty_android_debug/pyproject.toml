@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thirdparty-android-debug"
+version = "0.0.1"
+description = "Android debugging with JDWP and Frida"
+requires-python = ">=3.7"
+
+dependencies = [
+    "pydantic",
+    "androguard",
+    "protobuf",
+    "pure-python-adb-reborn",
+    "frida",
+    "frida-tools",
+    "fuzzyfinder",
+
+    "thirdparty-android-sdk",
+    "thirdparty-android-apk",
+    "thirdparty-android-emu",
+
+    "thirdparty-dalvik",
+    "thirdparty-jdwp",
+    "thirdparty-python-repl",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+
+#[project.scripts]
+#mycli = "mypackage.cli:main"
